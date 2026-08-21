@@ -1,0 +1,7 @@
+project_id = "lbgiprbhargxpokyecqn"
+
+[functions.cv-analyze]
+verify_jwt = true
+
+[functions.job-translate]
+verify_jwt = true

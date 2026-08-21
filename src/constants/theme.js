@@ -1,0 +1,56 @@
+export const darkColors = {
+  primary: '#4D96FF',
+  secondary: '#2ECC71',
+  tertiary: '#DC8000',
+  neutral: '#121212',
+  background: '#131313',
+  onSurface: '#E5E2E1',
+  onSurfaceVariant: '#C1C6D5',
+  surfaceContainer: '#201F1F',
+  surfaceVariant: '#353534',
+  surfaceContainerLow: '#1C1B1B',
+  outlineVariant: '#414753',
+  primaryContainer: '#4D96FF',
+  onPrimaryContainer: '#003064',
+  error: '#FFB4AB',
+};
+
+export const lightColors = {
+  primary: '#4D96FF',
+  secondary: '#2ECC71',
+  tertiary: '#DC8000',
+  neutral: '#FFFFFF',
+  background: '#FDFCFF',
+  onSurface: '#1C1B1B',
+  onSurfaceVariant: '#49454F',
+  surfaceContainer: '#E8E4E2',
+  surfaceVariant: '#D8D4D2',
+  surfaceContainerLow: '#F0ECEB',
+  outlineVariant: '#C4C6D0',
+  primaryContainer: '#4D96FF',
+  onPrimaryContainer: '#FFFFFF',
+  error: '#BA1A1A',
+  surfaceContainerHigh: '#DDD9D8',
+  onSecondary: '#FFFFFF',
+  surfaceBright: '#FDFCFF',
+  surfaceDim: '#DDD9D8',
+  outline: '#73777F',
+  surface: '#FDFCFF',
+  secondaryContainer: '#2ECC71',
+  surfaceContainerLowest: '#FFFFFF',
+  onError: '#FFFFFF',
+  onTertiary: '#FFFFFF',
+  inverseSurface: '#313030',
+  inverseOnSurface: '#F5F0EE',
+  inversePrimary: '#A9C7FF',
+};
+
+export const COLORS = darkColors;
+
+export const FONTS = {
+  headlineLg: 'BeVietnamPro_700Bold',
+  headlineMd: 'BeVietnamPro_600SemiBold',
+  bodyLg: 'BeVietnamPro_400Regular',
+  bodyMd: 'BeVietnamPro_400Regular',
+  labelMd: 'BeVietnamPro_500Medium',
+};

@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "NetVibe",
+    "slug": "NetVibe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo1.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#131313",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIStatusBarStyle": "UIStatusBarStyleLightContent",
+        "NSPhotoLibraryUsageDescription": "Allow NetVibe to access your photo library to set your profile picture and cover image.",
+        "NSPhotoLibraryAddUsageDescription": "Allow NetVibe to save images to your photo library."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#131313",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-sharing",
+      "expo-image-picker",
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      "expo-video",
+      "expo-audio"
+    ]
+  }
+}

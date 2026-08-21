@@ -1,0 +1,40 @@
+NETVIBE - CV ONERI SISTEMI KURULUM ADIMLARI
+============================================
+
+1) SUPABASE LOGIN (bir kez)
+   npx supabase login
+   - Tarayicida URL acilir, verilen kodu yapistir
+   - Token ~/.supabase/access-token dosyasina kaydedilir
+
+2) SUPABASE SQL EDITOR (https://supabase.com/dashboard)
+   - Proje: lbgiprbhargxpokyecqn
+   - SQL Editor -> New query -> su kopyala yapistir ve RUN:
+       supabase-cv-data.sql
+   (Bu dosya NetVibe klasorunun icinde)
+
+3) EDGE FUNCTIONLARI DEPLOY ET
+   npx supabase functions deploy cv-analyze --project-ref lbgiprbhargxpokyecqn
+   npx supabase functions deploy job-translate --project-ref lbgiprbhargxpokyecqn
+   - Ilk deploy DB parolasi sorarsa projenin DB parolasini ver
+
+4) OPENAI API KEY'E AYARLA
+   (Key'ini sonra vermek istersen bu adimi o zaman yap)
+   npx supabase secrets set OPENAI_API_KEY=sk-xxxx --project-ref lbgiprbhargxpokyecqn
+
+5) (OPSIYONEL) GUNLUK ILAN CEVIRISI
+   Supabase Dashboard -> Database -> Scheduled Functions -> Create:
+   - Name: job-translate
+   - Cron expression: 0 3 * * *
+   - Function: job-translate
+   - HTTP method: POST
+   - Authorization header: anon key (projenin anon key'i ile ayni)
+   - Bu, ilanlari her gece 03:00 UTC'de Ingilizce'ye cevirir
+
+6) TEST
+   App'i ac -> Profil -> Profili Duzenle -> CV yukle -> Kaydet
+   (cv-analyze otomatik calisir; 24 saatte en fazla 1 analiz)
+   Sonra Vacansiya ekranini ac -> %uyum rozetleri ve siralama gormen lazim
+
+7) SORUN GOSTERIRSE
+   - Edge function loglari: Dashboard -> Edge Functions -> cv-analyze -> Logs
+   - OpenAI hatalari ve pdf hatalari burada gorunur
