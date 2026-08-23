@@ -21,8 +21,23 @@ import { FONTS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { getProfileCompletion } from '../../lib/profileCompletion';
+import LocationPickerModal from '../../components/LocationPickerModal';
+import { clearOwnProfileCache } from './ProfileScreen';
 
 const DEFAULT_COVER = '#201F1F';
+
+const FIELD_LABELS = {
+  avatar: 'fldAvatar',
+  cover: 'fldCover',
+  fullName: 'fldName',
+  username: 'username',
+  jobTitle: 'jobTitle',
+  location: 'fldLocation',
+  bio: 'fldBio',
+  socialLinks: 'fldSocial',
+  cv: 'cvResume',
+};
 
 export default function EditProfileScreen({ onBack }) {
   const { t } = useLocale();
@@ -38,6 +53,7 @@ export default function EditProfileScreen({ onBack }) {
   const [jobTitle, setJobTitle] = useState('');
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [bio, setBio] = useState('');
   const [socialLinks, setSocialLinks] = useState(['']);
   const [openToWork, setOpenToWork] = useState(false);
@@ -50,6 +66,22 @@ export default function EditProfileScreen({ onBack }) {
   const [avatarFile, setAvatarFile] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
   const [cvFile, setCvFile] = useState(null);
+
+  const completion = useMemo(
+    () =>
+      getProfileCompletion({
+        avatar_url: avatarFile?.uri || avatarUrl,
+        cover_url: coverFile?.uri || coverUrl,
+        full_name: displayName,
+        username,
+        job_title: jobTitle,
+        location,
+        bio,
+        social_links: socialLinks.filter(Boolean),
+        cv_url: cvFile ? 'picked' : cvUrl,
+      }),
+    [avatarFile, avatarUrl, coverFile, coverUrl, displayName, username, jobTitle, location, bio, socialLinks, cvFile, cvUrl]
+  );
 
   const originalCvUrlRef = useRef(null);
 
@@ -259,6 +291,7 @@ export default function EditProfileScreen({ onBack }) {
         }
       }
 
+      clearOwnProfileCache();
       onBack();
     } catch (err) {
       Alert.alert('Error', err.message);
@@ -339,6 +372,32 @@ export default function EditProfileScreen({ onBack }) {
           </View>
         </View>
 
+        {/* Profile Completion */}
+        <View style={styles.completionCard}>
+          <View style={styles.completionTop}>
+            <Text style={styles.completionTitle}>{t('profileCompletion')}</Text>
+            <Text style={styles.completionPercent}>{completion.percent}%</Text>
+          </View>
+          <View style={styles.completionBarBg}>
+            <View
+              style={[
+                styles.completionBarFill,
+                { width: `${completion.percent}%` },
+                completion.percent >= 100 && { backgroundColor: colors.primary },
+              ]}
+            />
+          </View>
+          {completion.missing.length > 0 && (
+            <View style={styles.missingWrap}>
+              {completion.missing.map((key) => (
+                <View key={key} style={styles.missingChip}>
+                  <Text style={styles.missingChipText}>{t(FIELD_LABELS[key] || key)}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
         {/* Form Fields */}
         <View style={styles.form}>
           <View style={styles.fieldGroup}>
@@ -405,16 +464,20 @@ export default function EditProfileScreen({ onBack }) {
             </View>
             <View style={styles.field}>
               <Text style={styles.label}>{t('location')}</Text>
-              <View style={styles.inputWithIcon}>
+              <TouchableOpacity
+                style={styles.inputWithIcon}
+                activeOpacity={0.7}
+                onPress={() => setShowLocationPicker(true)}
+              >
                 <MaterialIcons name="location-on" size={18} color={colors.outline} />
-                <TextInput
-                  style={styles.inputIcon}
-                  value={location}
-                  onChangeText={setLocation}
-                  placeholder="Nothing"
-                  placeholderTextColor={colors.outlineVariant}
-                />
-              </View>
+                <Text
+                  style={[styles.locationValue, { color: location ? colors.onSurface : colors.outlineVariant }]}
+                  numberOfLines={1}
+                >
+                  {location || t('selectOnMap')}
+                </Text>
+                <MaterialIcons name="map" size={18} color={colors.primary} />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -506,6 +569,12 @@ export default function EditProfileScreen({ onBack }) {
           </View>
         </View>
       </ScrollView>
+
+      <LocationPickerModal
+        visible={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onSelect={setLocation}
+      />
     </View>
   );
 }
@@ -731,6 +800,12 @@ function getStyles(colors, FONTS) {
     fontFamily: FONTS.bodyMd,
     color: colors.onSurface,
   },
+  locationValue: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: FONTS.bodyMd,
+    textAlignVertical: 'center',
+  },
   textArea: {
     backgroundColor: colors.surfaceContainerLow,
     borderWidth: 1,
@@ -825,6 +900,57 @@ function getStyles(colors, FONTS) {
     fontFamily: FONTS.labelMd,
     fontSize: 11,
     color: colors.error,
+  },
+  completionCard: {
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 16,
+    marginHorizontal: 16,
+  },
+  completionTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  completionTitle: {
+    fontFamily: FONTS.labelMd,
+    fontSize: 13,
+    color: colors.onSurfaceVariant,
+  },
+  completionPercent: {
+    fontFamily: FONTS.labelMd,
+    fontSize: 13,
+    color: colors.primary,
+  },
+  completionBarBg: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.outlineVariant,
+    overflow: 'hidden',
+  },
+  completionBarFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+  },
+  missingWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
+  },
+  missingChip: {
+    backgroundColor: colors.surfaceContainerHighest,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  missingChipText: {
+    fontFamily: FONTS.labelMd,
+    fontSize: 11,
+    color: colors.onSurfaceVariant,
   },
   toggleRow: {
     flexDirection: 'row',

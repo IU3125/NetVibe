@@ -20,8 +20,13 @@ import { FONTS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { getProfileCompletion } from '../../lib/profileCompletion';
 
 const profileCache = {};
+
+export function clearOwnProfileCache() {
+  delete profileCache['__own__'];
+}
 
 const formatCount = (n) => {
   if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M';
@@ -59,6 +64,7 @@ export default function ProfileScreen({ onSignOut, onEditProfile, onSettings, on
 
   const isOwnProfile = !profileId;
   const cacheKey = profileId || '__own__';
+  const completion = useMemo(() => getProfileCompletion(profile), [profile]);
 
   useEffect(() => {
     if (profileCache[cacheKey]) {
@@ -413,6 +419,26 @@ export default function ProfileScreen({ onSignOut, onEditProfile, onSettings, on
           })}
         </View>
 
+        {/* Profile Completion (own profile only) */}
+        {isOwnProfile && completion.percent < 100 && (
+          <TouchableOpacity
+            style={styles.completionCard}
+            activeOpacity={0.85}
+            onPress={onEditProfile}
+          >
+            <View style={styles.completionTop}>
+              <Text style={styles.completionTitle}>{t('profileCompletion')}</Text>
+              <Text style={styles.completionPercent}>{completion.percent}%</Text>
+            </View>
+            <View style={styles.completionBarBg}>
+              <View
+                style={[styles.completionBarFill, { width: `${completion.percent}%` }]}
+              />
+            </View>
+            <Text style={styles.completionCta}>{t('completeNow')} →</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Tab Switcher */}
         <View style={styles.tabRow}>
           <TouchableOpacity
@@ -750,6 +776,46 @@ function getStyles(colors, FONTS) {
   },
   tabRow: {
     flexDirection: 'row',
+  },
+  completionCard: {
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: 14,
+    padding: 14,
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  completionTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  completionTitle: {
+    fontFamily: FONTS.labelMd,
+    fontSize: 13,
+    color: colors.onSurfaceVariant,
+  },
+  completionPercent: {
+    fontFamily: FONTS.labelMd,
+    fontSize: 13,
+    color: colors.primary,
+  },
+  completionBarBg: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.outlineVariant,
+    overflow: 'hidden',
+  },
+  completionBarFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+  },
+  completionCta: {
+    fontFamily: FONTS.labelMd,
+    fontSize: 12,
+    color: colors.primary,
+    marginTop: 8,
   },
   tab: {
     flex: 1,
