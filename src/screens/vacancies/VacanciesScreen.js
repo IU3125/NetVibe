@@ -9,6 +9,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLocale } from '../../i18n/LocaleContext';
 import { supabase } from '../../lib/supabase';
 import { scoreJob, rankJobs } from '../../lib/jobRecommendations';
+import { findCountry } from '../../lib/cities';
+import CityPickerModal from '../../components/CityPickerModal';
+import * as Location from 'expo-location';
 
 const CATEGORIES = [
   { key: 'services', label: 'Services', icon: 'headphones' },
@@ -44,6 +47,14 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [cvData, setCvData] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterCity, setFilterCity] = useState(null);
+  const [filterType, setFilterType] = useState(null);
+  const [minSalary, setMinSalary] = useState('');
+  const [sortBy, setSortBy] = useState('match');
+  const [recCities, setRecCities] = useState([]);
+  const [recCountryName, setRecCountryName] = useState('');
+  const [showCityPicker, setShowCityPicker] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -99,6 +110,54 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const pos = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=10&addressdetails=1`,
+            { headers: { 'User-Agent': 'NetVibe/1.0 (recommended cities)' } }
+          );
+          const data = await res.json();
+          const cc = data?.address?.country_code;
+          const country = findCountry(cc);
+          if (country && alive) {
+            setRecCities(country.cities);
+            setRecCountryName(country.name);
+            return;
+          }
+        }
+      } catch (e) {
+        // fall through to default
+      }
+      if (alive) {
+        const def = findCountry('az');
+        setRecCities(def.cities);
+        setRecCountryName(def.name);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const jobTypes = useMemo(
+    () => [...new Set(jobs.map(j => j.type).filter(Boolean))].sort(),
+    [jobs]
+  );
+  const activeFilterCount =
+    (filterCity ? 1 : 0) + (filterType ? 1 : 0) + (minSalary ? 1 : 0);
+
+  const resetFilters = () => {
+    setFilterCity(null);
+    setFilterType(null);
+    setMinSalary('');
+    setSortBy('match');
+  };
+
   const filteredJobs = useMemo(() => {
     let list = jobs;
     if (activeCategory) list = list.filter(j => j.category === activeCategory);
@@ -111,11 +170,31 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs }) {
         j.type.toLowerCase().includes(q)
       );
     }
-    if (cvData) {
+    if (filterCity) {
+      const fc = filterCity.toLowerCase();
+      list = list.filter(j => j.location && j.location.toLowerCase().includes(fc));
+    }
+    if (filterType) list = list.filter(j => j.type === filterType);
+    const minS = parseFloat(minSalary);
+    if (!isNaN(minS) && minS > 0) {
+      list = list.filter(j => {
+        const top = j.salary_max != null ? j.salary_max : j.salary_min;
+        return top != null && top >= minS;
+      });
+    }
+    if (sortBy === 'salary') {
+      list = [...list].sort((a, b) => {
+        const av = a.salary_max != null ? a.salary_max : a.salary_min ?? -1;
+        const bv = b.salary_max != null ? b.salary_max : b.salary_min ?? -1;
+        return bv - av;
+      });
+    } else if (sortBy === 'newest') {
+      list = [...list].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } else if (cvData) {
       list = rankJobs(list, cvData);
     }
     return list;
-  }, [jobs, query, activeCategory, cvData]);
+  }, [jobs, query, activeCategory, cvData, filterCity, filterType, minSalary, sortBy]);
 
   const formatSalary = (job) => {
     const cur = job.currency || 'USD';
@@ -174,10 +253,160 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs }) {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.locationRow}>
-            <MaterialIcons name="location-on" size={16} color={colors.primary} />
-            <Text style={styles.locationText}>Dhaka, Bangladesh</Text>
-          </View>
+          {recCities.length > 0 && (
+            <View style={[styles.recSection, { backgroundColor: colors.surfaceContainerLow }]}>
+              <View style={styles.recHeader}>
+                <View style={[styles.recIconWrap, { backgroundColor: colors.primaryContainer }]}>
+                  <MaterialIcons name="near-me" size={14} color={colors.onPrimaryContainer} />
+                </View>
+                <Text style={[styles.recLabel, { color: colors.onSurface }]} numberOfLines={1}>
+                  {t('recommendedCities')}
+                </Text>
+                {!!recCountryName && (
+                  <View style={[styles.recCountryBadge, { backgroundColor: colors.secondary + '22' }]}>
+                    <Text style={[styles.recCountryText, { color: colors.secondary }]} numberOfLines={1}>
+                      {recCountryName}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.recActions}>
+                  <TouchableOpacity
+                    style={styles.recActionBtn}
+                    activeOpacity={0.75}
+                    onPress={() => setShowFilters(v => !v)}
+                  >
+                    <MaterialIcons name="tune" size={15} color={colors.primary} />
+                    {activeFilterCount > 0 && <View style={styles.recDot} />}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.recActionBtn}
+                    activeOpacity={0.75}
+                    onPress={() => setShowCityPicker(true)}
+                  >
+                    <MaterialIcons name="swap-horiz" size={15} color={colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+              >
+                {recCities.map(c => {
+                  const active = filterCity === c;
+                  return (
+                    <TouchableOpacity
+                      key={c}
+                      activeOpacity={0.75}
+                      style={[
+                        styles.recChip,
+                        { borderColor: colors.outlineVariant + '55' },
+                        active && { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer },
+                      ]}
+                      onPress={() => setFilterCity(active ? null : c)}
+                    >
+                      <MaterialIcons
+                        name={active ? 'check-circle' : 'location-city'}
+                        size={13}
+                        color={active ? colors.onPrimaryContainer : colors.primary}
+                      />
+                      <Text
+                        style={[styles.recChipText, { color: colors.onSurfaceVariant }, active && { color: colors.onPrimaryContainer, fontWeight: '700' }]}
+                        numberOfLines={1}
+                      >
+                        {c}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {showFilters && (
+            <View style={[styles.filterPanel, { backgroundColor: colors.surfaceContainerLow }]}>
+              <Text style={[styles.filterLabel, { color: colors.onSurfaceVariant }]}>{t('city')}</Text>
+              <View style={styles.chipWrap}>
+                <TouchableOpacity
+                  style={[styles.chip, filterCity === null ? styles.chipActive : null]}
+                  onPress={() => setFilterCity(null)}
+                >
+                  <Text style={[styles.chipText, filterCity === null && styles.chipTextActive]}>{t('allCities')}</Text>
+                </TouchableOpacity>
+                {recCities.map(c => (
+                  <TouchableOpacity
+                    key={c}
+                    style={[styles.chip, filterCity === c ? styles.chipActive : null]}
+                    onPress={() => setFilterCity(filterCity === c ? null : c)}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.chipText, filterCity === c && styles.chipTextActive]}
+                    >
+                      {c}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {jobTypes.length > 0 && (
+                <>
+                  <Text style={[styles.filterLabel, { color: colors.onSurfaceVariant }]}>{t('employmentType')}</Text>
+                  <View style={styles.chipWrap}>
+                    <TouchableOpacity
+                      style={[styles.chip, filterType === null ? styles.chipActive : null]}
+                      onPress={() => setFilterType(null)}
+                    >
+                      <Text style={[styles.chipText, filterType === null && styles.chipTextActive]}>{t('all')}</Text>
+                    </TouchableOpacity>
+                    {jobTypes.map(tp => (
+                      <TouchableOpacity
+                        key={tp}
+                        style={[styles.chip, filterType === tp ? styles.chipActive : null]}
+                        onPress={() => setFilterType(filterType === tp ? null : tp)}
+                      >
+                        <Text style={[styles.chipText, filterType === tp && styles.chipTextActive]}>{tp}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              )}
+
+              <Text style={[styles.filterLabel, { color: colors.onSurfaceVariant }]}>{t('minSalary')}</Text>
+              <TextInput
+                style={[styles.minSalaryInput, { borderColor: colors.outlineVariant + '55', color: colors.onSurface }]}
+                placeholder="0"
+                placeholderTextColor={colors.onSurfaceVariant}
+                value={minSalary}
+                onChangeText={setMinSalary}
+                keyboardType="number-pad"
+              />
+
+              <Text style={[styles.filterLabel, { color: colors.onSurfaceVariant }]}>{t('sortBy')}</Text>
+              <View style={styles.chipWrap}>
+                {[
+                  ['match', t('bestMatch')],
+                  ['newest', t('sortNewest')],
+                  ['salary', t('salaryHighToLow')],
+                ].map(([key, label]) => (
+                  <TouchableOpacity
+                    key={key}
+                    style={[styles.chip, sortBy === key ? styles.chipActive : null]}
+                    onPress={() => setSortBy(key)}
+                  >
+                    <Text style={[styles.chipText, sortBy === key && styles.chipTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {activeFilterCount > 0 || sortBy !== 'match' ? (
+                <TouchableOpacity onPress={resetFilters} style={styles.resetBtn}>
+                  <MaterialIcons name="refresh" size={14} color={colors.primary} />
+                  <Text style={[styles.resetText, { color: colors.primary }]}>{t('resetFilters')}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          )}
 
           <View style={styles.catGrid}>
             {CATEGORIES.map(cat => {
@@ -304,6 +533,13 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs }) {
           )}
         </View>
       </ScrollView>
+
+      <CityPickerModal
+        visible={showCityPicker}
+        onClose={() => setShowCityPicker(false)}
+        onSelect={setFilterCity}
+        onClear={() => setFilterCity(null)}
+      />
     </View>
   );
 }
@@ -336,8 +572,116 @@ function getStyles(colors) {
       borderRadius: 12, height: 48,
     },
     searchInput: { flex: 1, fontFamily: FONTS.bodyMd, fontSize: 14 },
-    locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
-    locationText: { fontFamily: FONTS.labelMd, fontSize: 12, color: colors.primary },
+    recActions: { flexDirection: 'row', marginLeft: 'auto', gap: 6 },
+    recActionBtn: {
+      width: 28,
+      height: 28,
+      borderRadius: 9,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant + '55',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    recDot: {
+      position: 'absolute',
+      top: -2,
+      right: -2,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+    },
+    recSection: {
+      marginTop: 12,
+      borderRadius: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      gap: 8,
+    },
+    recHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    recIconWrap: {
+      width: 26,
+      height: 26,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    recLabel: {
+      fontFamily: FONTS.labelMd,
+      fontSize: 13,
+      fontWeight: '600',
+      flexShrink: 1,
+    },
+    recCountryBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      maxWidth: 110,
+    },
+    recCountryText: {
+      fontFamily: FONTS.labelMd,
+      fontSize: 10,
+      fontWeight: '700',
+    },
+    recChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      height: 34,
+      paddingHorizontal: 12,
+      borderRadius: 17,
+      borderWidth: 1,
+      backgroundColor: 'transparent',
+    },
+    recChipText: {
+      fontFamily: FONTS.labelMd,
+      fontSize: 12,
+    },
+    filterPanel: {
+      marginTop: 10,
+      borderRadius: 14,
+      padding: 14,
+      gap: 8,
+    },
+    filterLabel: {
+      fontFamily: FONTS.labelMd,
+      fontSize: 11,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+      marginTop: 4,
+    },
+    chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    chip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 14,
+      backgroundColor: colors.surfaceContainerHighest,
+      maxWidth: '100%',
+    },
+    chipActive: { backgroundColor: colors.primaryContainer },
+    chipText: { fontFamily: FONTS.labelMd, fontSize: 11, color: colors.onSurfaceVariant },
+    chipTextActive: { color: colors.onPrimaryContainer, fontWeight: '600' },
+    minSalaryInput: {
+      height: 40,
+      borderWidth: 1,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      fontSize: 13,
+      fontFamily: FONTS.bodyMd,
+    },
+    resetBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 5,
+      marginTop: 4,
+      paddingVertical: 4,
+    },
+    resetText: { fontFamily: FONTS.labelMd, fontSize: 12 },
     catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 20, marginBottom: 28 },
     catCard: {
       alignItems: 'center', justifyContent: 'center',

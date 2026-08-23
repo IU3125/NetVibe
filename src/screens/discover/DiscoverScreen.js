@@ -46,7 +46,6 @@ export default function DiscoverScreen({ onViewPost, onViewCommunity }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [users, setUsers] = useState([]);
   const [communityResults, setCommunityResults] = useState([]);
-  const [hashtagResults, setHashtagResults] = useState([]);
   const [communities, setCommunities] = useState([]);
   const [joinedMap, setJoinedMap] = useState({});
   const [suggestions, setSuggestions] = useState([]);
@@ -123,21 +122,16 @@ export default function DiscoverScreen({ onViewPost, onViewCommunity }) {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const [profRes, commRes, tagRes] = await Promise.all([
+      const [profRes, commRes] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, full_name, username, avatar_url, job_title')
-          .or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
+          .select('id, full_name, username, avatar_url, job_title, location')
+          .or(`username.ilike.%${q}%,full_name.ilike.%${q}%,job_title.ilike.%${q}%,location.ilike.%${q}%`)
           .neq('id', user?.id)
           .limit(20),
         supabase
           .from('communities')
           .select('*, community_members(count)')
-          .ilike('name', `%${q}%`)
-          .limit(10),
-        supabase
-          .from('hashtags')
-          .select('name')
           .ilike('name', `%${q}%`)
           .limit(10),
       ]);
@@ -154,7 +148,6 @@ export default function DiscoverScreen({ onViewPost, onViewCommunity }) {
       setFollowMap(prev => ({ ...prev, ...fMap }));
       setUsers(profRes.data || []);
       setCommunityResults((commRes.data || []).map(c => ({ ...c, member_count: c.community_members?.[0]?.count || 0 })));
-      setHashtagResults(tagRes.data || []);
     } catch {
       setUsers([]);
     } finally {
@@ -355,7 +348,7 @@ export default function DiscoverScreen({ onViewPost, onViewCommunity }) {
     if (loading) {
       return <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />;
     }
-    const noResults = users.length === 0 && communityResults.length === 0 && hashtagResults.length === 0;
+    const noResults = users.length === 0 && communityResults.length === 0;
     if (noResults) {
       return <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>No results found</Text>;
     }
@@ -393,24 +386,6 @@ export default function DiscoverScreen({ onViewPost, onViewCommunity }) {
           <>
             <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Communities</Text>
             {communityResults.map(renderInterest)}
-          </>
-        )}
-        {hashtagResults.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Hashtags</Text>
-            {hashtagResults.map(h => (
-              <TouchableOpacity
-                key={h.name}
-                style={[styles.userRow, { borderBottomWidth: 0 }]}
-                onPress={() => setActiveFilter('#' + h.name)}
-              >
-                <View style={[styles.hashtagIcon, { backgroundColor: colors.primaryContainer }]}>
-                  <Text style={[styles.hashtagIconText, { color: colors.primary }]}>#</Text>
-                </View>
-                <Text style={[styles.userName, { color: colors.primary }]}>#{h.name}</Text>
-                <MaterialIcons name="chevron-right" size={20} color={colors.onSurfaceVariant} />
-              </TouchableOpacity>
-            ))}
           </>
         )}
       </>
