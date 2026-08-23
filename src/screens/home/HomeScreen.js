@@ -12,6 +12,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { FONTS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
+import { cacheGet, cacheSet } from '../../lib/cache';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import StoryPreview from '../../components/StoryPreview';
@@ -43,6 +44,11 @@ export default function HomeScreen({ onViewPost, onViewStory, onAddStory }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchPosts = useCallback(async () => {
+    const cached = await cacheGet('feed');
+    if (cached && Array.isArray(cached.data) && cached.data.length) {
+      setPosts(cached.data);
+      setLoading(false);
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -123,6 +129,7 @@ export default function HomeScreen({ onViewPost, onViewStory, onAddStory }) {
       });
 
       setPosts(mapped);
+      cacheSet('feed', mapped);
     } catch (err) {
       console.error(err);
     } finally {

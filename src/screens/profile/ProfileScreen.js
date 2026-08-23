@@ -18,6 +18,7 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { FONTS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
+import { cacheGet, cacheSet } from '../../lib/cache';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getProfileCompletion } from '../../lib/profileCompletion';
@@ -78,6 +79,21 @@ export default function ProfileScreen({ onSignOut, onEditProfile, onSettings, on
       setPosts(cached.posts || []);
       setPostsCount(cached.postsCount || 0);
       setLoading(false);
+    } else if (isOwnProfile) {
+      // Disk cache: instant own-profile render while network refreshes
+      cacheGet('own_profile').then(disk => {
+        const d = disk && disk.data;
+        if (!d || !d.profile) return;
+        setProfile(d.profile);
+        setIsFollowing(!!d.isFollowing);
+        setIsMutual(!!d.isMutual);
+        setAccessDenied(false);
+        setFollowersCount(d.followersCount || 0);
+        setFollowingCount(d.followingCount || 0);
+        setPosts(d.posts || []);
+        setPostsCount(d.postsCount || 0);
+        setLoading(false);
+      });
     }
     loadProfile();
   }, [profileId]);
@@ -189,6 +205,9 @@ export default function ProfileScreen({ onSignOut, onEditProfile, onSettings, on
       setPostsCount(mappedPosts.length);
 
       profileCache[cacheKey] = { profile: profileData, isFollowing: following, isMutual: mutual, accessDenied: false, followersCount: followersCountResult?.count ?? 0, followingCount: followingCountResult?.count ?? 0, posts: mappedPosts, postsCount: mappedPosts.length };
+      if (isOwnProfile) {
+        cacheSet('own_profile', profileCache[cacheKey]);
+      }
     } catch (err) {
       console.error(err);
     } finally {

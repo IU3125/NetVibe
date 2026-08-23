@@ -15,6 +15,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { FONTS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
+import { cacheGet, cacheSet } from '../../lib/cache';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLocale } from '../../i18n/LocaleContext';
 
@@ -55,17 +56,21 @@ export default function DiscoverScreen({ onViewPost, onViewCommunity }) {
   const [loading, setLoading] = useState(false);
 
   const loadTrending = useCallback(async () => {
+    const cachedT = await cacheGet('discover_trending');
+    if (cachedT && Array.isArray(cachedT.data) && cachedT.data.length) setTrending(cachedT.data);
     try {
       const { data, error } = await supabase.rpc('get_trending_hashtags', { limit_n: 8 });
       if (error) throw error;
       setTrending(data || []);
+      cacheSet('discover_trending', data || []);
     } catch (err) {
       console.error(err);
-      setTrending([]);
     }
   }, []);
 
   const loadSuggestions = useCallback(async () => {
+    const cachedS = await cacheGet('discover_suggestions');
+    if (cachedS && Array.isArray(cachedS.data) && cachedS.data.length) setSuggestions(cachedS.data);
     try {
       const { data, error } = await supabase.rpc('get_suggestions', { limit_n: 10 });
       if (error) {
@@ -76,15 +81,19 @@ export default function DiscoverScreen({ onViewPost, onViewCommunity }) {
           .neq('id', user?.id)
           .limit(10);
         setSuggestions(profiles || []);
+        cacheSet('discover_suggestions', profiles || []);
         return;
       }
       setSuggestions(data || []);
+      cacheSet('discover_suggestions', data || []);
     } catch (err) {
       console.error(err);
     }
   }, []);
 
   const loadCommunities = useCallback(async () => {
+    const cachedC = await cacheGet('discover_communities');
+    if (cachedC && Array.isArray(cachedC.data) && cachedC.data.length) setCommunities(cachedC.data);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: rows, error } = await supabase
@@ -97,6 +106,7 @@ export default function DiscoverScreen({ onViewPost, onViewCommunity }) {
         member_count: c.community_members?.[0]?.count || 0,
       }));
       setCommunities(list);
+      cacheSet('discover_communities', list);
 
       if (user) {
         const { data: mine } = await supabase

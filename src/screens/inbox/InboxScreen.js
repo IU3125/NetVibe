@@ -7,6 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { FONTS } from '../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
+import { cacheGet, cacheSet } from '../../lib/cache';
 
 const FILTERS = ['All', 'Unread', 'Pinned'];
 
@@ -37,6 +38,11 @@ export default function InboxScreen({ onViewConversation, onBack }) {
   const debounceRef = useRef(null);
 
   const fetchThreads = useCallback(async (silent) => {
+    const cached = await cacheGet('inbox_threads');
+    if (cached && Array.isArray(cached.data) && cached.data.length) {
+      setThreads(cached.data);
+      setLoading(false);
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -125,6 +131,7 @@ export default function InboxScreen({ onViewConversation, onBack }) {
       });
 
       setThreads(rows);
+      cacheSet('inbox_threads', rows);
     } catch (err) {
       console.error(err);
     } finally {

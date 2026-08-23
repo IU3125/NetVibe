@@ -9,6 +9,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLocale } from '../../i18n/LocaleContext';
 import { supabase } from '../../lib/supabase';
 import { scoreJob, rankJobs } from '../../lib/jobRecommendations';
+import { cacheGet, cacheSet } from '../../lib/cache';
 import { findCountry } from '../../lib/cities';
 import CityPickerModal from '../../components/CityPickerModal';
 import * as Location from 'expo-location';
@@ -57,6 +58,11 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs }) {
   const [showCityPicker, setShowCityPicker] = useState(false);
 
   const fetchData = useCallback(async () => {
+    const cached = await cacheGet('jobs');
+    if (cached && Array.isArray(cached.data) && cached.data.length) {
+      setJobs(cached.data);
+      setLoading(false);
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const now = new Date();
@@ -69,6 +75,7 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs }) {
         .order('created_at', { ascending: false });
       if (error) throw error;
       setJobs(rows || []);
+      cacheSet('jobs', rows || []);
 
       if (user) {
         const { data: prof } = await supabase
