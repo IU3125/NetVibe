@@ -18,7 +18,7 @@ import { trackLogin } from '../../lib/trackLogin';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
-function SuccessModal({ visible, message, onDismiss, t }) {
+function SuccessModal({ visible, message, onDismiss, t, styles }) {
   const scale = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -357,6 +357,7 @@ export default function AuthScreen({ onLogin }) {
         message={successModal.message}
         onDismiss={() => setSuccessModal({ visible: false, message: '' })}
         t={t}
+        styles={styles}
       />
     </KeyboardAvoidingView>
   );
