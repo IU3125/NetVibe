@@ -4,6 +4,7 @@ import {
   ActivityIndicator, Linking, Alert, RefreshControl,
   Platform, StatusBar, TextInput,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { MaterialIcons } from '@expo/vector-icons';
 import { FONTS } from '../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -59,6 +60,7 @@ export default function EmployerApplicationsScreen({ onBack }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [notesOpenId, setNotesOpenId] = useState(null);
   const [noteDrafts, setNoteDrafts] = useState({});
+  const [viewCvUrl, setViewCvUrl] = useState(null);
 
   const cvFor = (app) => app.cv_url || app.profile?.cv_url || null;
 
@@ -347,7 +349,7 @@ export default function EmployerApplicationsScreen({ onBack }) {
                     { backgroundColor: cvFor(app) ? colors.primaryContainer : colors.surfaceContainer },
                   ]}
                   disabled={!cvFor(app)}
-                  onPress={() => openCV(cvFor(app))}
+                  onPress={() => setViewCvUrl(cvFor(app))}
                 >
                   <MaterialIcons
                     name="description"
@@ -429,6 +431,34 @@ export default function EmployerApplicationsScreen({ onBack }) {
           );
         })}
       </ScrollView>
+
+      {/* In-app CV viewer */}
+      {viewCvUrl && (
+        <View style={styles.cvViewer}>
+          <View style={[styles.cvViewerHeader, { backgroundColor: colors.surfaceContainerLow }]}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => setViewCvUrl(null)}>
+              <MaterialIcons name="arrow-back" size={22} color={colors.onSurface} />
+            </TouchableOpacity>
+            <Text style={[styles.cvViewerTitle, { color: colors.onSurface }]} numberOfLines={1}>
+              {decodeURIComponent(viewCvUrl.split('/').pop() || 'CV.pdf')}
+            </Text>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={() => Linking.openURL(viewCvUrl).catch(() => Alert.alert('Error', 'Could not open CV link'))}
+            >
+              <MaterialIcons name="open-in-new" size={20} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <WebView
+            source={{ uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewCvUrl)}` }}
+            style={{ flex: 1, backgroundColor: colors.surfaceContainer }}
+            startInLoadingState
+            renderLoading={() => (
+              <ActivityIndicator style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -14 }} color={colors.primary} />
+            )}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -570,4 +600,18 @@ const getStyles = (colors) => StyleSheet.create({
     borderRadius: 14,
   },
   noteSaveText: { ...FONTS.labelMd, fontSize: 12, fontWeight: '700' },
+  cvViewer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.background,
+    zIndex: 1000,
+    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 24,
+  },
+  cvViewerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+  },
+  cvViewerTitle: { ...FONTS.headlineMd, fontSize: 15, flex: 1 },
 });
