@@ -32,7 +32,7 @@ const TYPE_ICONS = {
   'Internship': 'school',
 };
 
-export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs }) {
+export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs, onEmployerApps }) {
   const { colors } = useTheme();
   const { t } = useLocale();
   const styles = useMemo(() => getStyles(colors), [colors]);
@@ -231,6 +231,14 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs }) {
                   onPress={onAdminJobs}
                 >
                   <MaterialIcons name="admin-panel-settings" size={20} color={colors.tertiary} />
+                </TouchableOpacity>
+              )}
+              {onEmployerApps && (
+                <TouchableOpacity
+                  style={[styles.adminBtn, { backgroundColor: colors.surfaceContainerLow, borderColor: colors.outlineVariant + '44' }]}
+                  onPress={onEmployerApps}
+                >
+                  <MaterialIcons name="assignment-ind" size={20} color={colors.primary} />
                 </TouchableOpacity>
               )}
               {onPostJob && (

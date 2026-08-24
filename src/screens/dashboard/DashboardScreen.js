@@ -22,6 +22,7 @@ import PostDetailScreen from '../profile/PostDetailScreen';
 import CreatePostScreen from '../posts/CreatePostScreen';
 import JobDetailScreen from '../vacancies/JobDetailScreen';
 import CreateJobScreen from '../vacancies/CreateJobScreen';
+import EmployerApplicationsScreen from '../vacancies/EmployerApplicationsScreen';
 import NotificationsScreen from '../notifications/NotificationsScreen';
 import SavedPostsScreen from '../profile/SavedPostsScreen';
 import CommunityScreen from '../discover/CommunityScreen';
@@ -272,6 +273,14 @@ export default function DashboardScreen({ onSignOut }) {
     );
   }
 
+  if (subScreen === 'employerApps') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <EmployerApplicationsScreen onBack={handleBack} />
+      </View>
+    );
+  }
+
   if (subScreen === 'adminHome') {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -336,6 +345,7 @@ export default function DashboardScreen({ onSignOut }) {
           onViewConversation={handleViewConversation}
           onViewJob={handleViewJob}
           onPostJob={handlePostJob}
+          onEmployerApps={() => setSubScreen('employerApps')}
           onAdminJobs={handleAdminJobs}
           onViewCommunity={handleViewCommunity}
           onViewProfile={handleViewProfile}
