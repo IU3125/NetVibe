@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
   ActivityIndicator, Linking, Alert, RefreshControl,
-  Platform, StatusBar, TextInput,
+  Platform, StatusBar, TextInput, Modal,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -433,14 +433,19 @@ export default function EmployerApplicationsScreen({ onBack }) {
       </ScrollView>
 
       {/* In-app CV viewer */}
-      {viewCvUrl && (
+      <Modal
+        visible={!!viewCvUrl}
+        animationType="slide"
+        onRequestClose={() => setViewCvUrl(null)}
+        statusBarTranslucent
+      >
         <View style={styles.cvViewer}>
           <View style={[styles.cvViewerHeader, { backgroundColor: colors.surfaceContainerLow }]}>
             <TouchableOpacity style={styles.backBtn} onPress={() => setViewCvUrl(null)}>
               <MaterialIcons name="arrow-back" size={22} color={colors.onSurface} />
             </TouchableOpacity>
             <Text style={[styles.cvViewerTitle, { color: colors.onSurface }]} numberOfLines={1}>
-              {decodeURIComponent(viewCvUrl.split('/').pop() || 'CV.pdf')}
+              {decodeURIComponent((viewCvUrl || '').split('/').pop() || 'CV.pdf')}
             </Text>
             <TouchableOpacity
               style={styles.backBtn}
@@ -458,7 +463,7 @@ export default function EmployerApplicationsScreen({ onBack }) {
             )}
           />
         </View>
-      )}
+      </Modal>
     </View>
   );
 }
@@ -601,9 +606,8 @@ const getStyles = (colors) => StyleSheet.create({
   },
   noteSaveText: { ...FONTS.labelMd, fontSize: 12, fontWeight: '700' },
   cvViewer: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     backgroundColor: colors.background,
-    zIndex: 1000,
     paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 24,
   },
   cvViewerHeader: {
