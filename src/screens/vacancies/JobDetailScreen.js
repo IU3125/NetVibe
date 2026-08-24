@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, Platform, StatusBar, ActivityIndicator, Share, Animated,
+  Image, Platform, StatusBar, ActivityIndicator, Share, Animated, TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { FONTS } from '../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLocale } from '../../i18n/LocaleContext';
 import { supabase } from '../../lib/supabase';
 
 const bullets = (items, color, styles) =>
@@ -18,6 +19,7 @@ const bullets = (items, color, styles) =>
   ));
 
 export default function JobDetailScreen({ job, onBack }) {
+  const { t } = useLocale();
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const [d, setD] = useState(null);
@@ -27,6 +29,9 @@ export default function JobDetailScreen({ job, onBack }) {
   const [applying, setApplying] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [jobId, setJobId] = useState(job?.id);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [coverText, setCoverText] = useState('');
+  const [userCvUrl, setUserCvUrl] = useState(null);
   const ping = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -99,15 +104,35 @@ export default function JobDetailScreen({ job, onBack }) {
     return () => { cancelled = true; };
   }, [jobId]);
 
+  const openApplyModal = async () => {
+    setShowApplyModal(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('cv_url')
+        .eq('id', user.id)
+        .maybeSingle();
+      setUserCvUrl(prof?.cv_url || null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const apply = async () => {
     if (!applied && !applying) {
       setApplying(true);
       const { data, error } = await supabase.rpc('apply_to_job', {
         job_id: jobId,
+        cover: coverText.trim() || null,
+        cv: userCvUrl || null,
       });
       setApplying(false);
       if (!error && data) {
         setApplied(data);
+        setShowApplyModal(false);
+        setCoverText('');
         setShowSuccess(true);
       } else {
         console.error(error);
@@ -382,17 +407,79 @@ export default function JobDetailScreen({ job, onBack }) {
             <TouchableOpacity
               style={[styles.applyBtn, { backgroundColor: colors.primaryContainer }]}
               activeOpacity={0.85}
+              onPress={openApplyModal}
+            >
+              <Text style={[styles.applyBtnText, { color: colors.onPrimaryContainer }]}>Apply the post</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+      {/* Apply modal */}
+      {showApplyModal && (
+        <View style={styles.applyOverlay}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setShowApplyModal(false)} />
+          <View style={[styles.applySheet, { backgroundColor: colors.surfaceContainerLow }]}>
+            <View style={styles.sheetGrabber}>
+              <View style={[styles.grabberBar, { backgroundColor: colors.outlineVariant }]} />
+            </View>
+            <View style={styles.sheetHeader}>
+              <MaterialIcons name="send" size={18} color={colors.primary} />
+              <Text style={[styles.sheetTitle, { color: colors.onSurface }]}>{t('applyModalTitle')}</Text>
+            </View>
+
+            <View style={styles.cvRow}>
+              <MaterialIcons
+                name="description"
+                size={16}
+                color={userCvUrl ? colors.primary : colors.error}
+              />
+              <Text
+                style={[
+                  styles.cvRowText,
+                  { color: userCvUrl ? colors.onSurface : colors.error },
+                ]}
+                numberOfLines={1}
+              >
+                {userCvUrl
+                  ? `${t('yourCv')}: ${decodeURIComponent(userCvUrl.split('/').pop() || 'CV.pdf')}`
+                  : t('noCvWarning')}
+              </Text>
+            </View>
+
+            <TextInput
+              style={[
+                styles.coverInput,
+                { borderColor: colors.outlineVariant + '66', color: colors.onSurface },
+              ]}
+              placeholder={t('coverLetterHint')}
+              placeholderTextColor={colors.onSurfaceVariant}
+              value={coverText}
+              onChangeText={setCoverText}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+
+            <TouchableOpacity
+              style={[styles.sendBtn, { backgroundColor: colors.primaryContainer }]}
+              activeOpacity={0.85}
               onPress={apply}
               disabled={applying}
             >
               {applying ? (
-                <ActivityIndicator color={colors.onPrimaryContainer} />
+                <ActivityIndicator size="small" color={colors.onPrimaryContainer} />
               ) : (
-                <Text style={[styles.applyBtnText, { color: colors.onPrimaryContainer }]}>Apply the post</Text>
+                <>
+                  <MaterialIcons name="check-circle" size={17} color={colors.onPrimaryContainer} />
+                  <Text style={[styles.sendBtnText, { color: colors.onPrimaryContainer }]}>
+                    {t('sendApplication')}
+                  </Text>
+                </>
               )}
             </TouchableOpacity>
-          )}
+          </View>
         </View>
+      )}
       </View>
     </View>
   );
@@ -544,5 +631,42 @@ function getStyles(colors) {
       color: colors.primary, textTransform: 'uppercase',
       paddingVertical: 6,
     },
+    applyOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'flex-end',
+      zIndex: 999,
+    },
+    applySheet: {
+      borderTopLeftRadius: 22,
+      borderTopRightRadius: 22,
+      paddingHorizontal: 20,
+      paddingBottom: 34,
+      paddingTop: 8,
+    },
+    sheetGrabber: { alignItems: 'center', paddingBottom: 10 },
+    grabberBar: { width: 40, height: 4, borderRadius: 2 },
+    sheetHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+    sheetTitle: { fontFamily: FONTS.headlineMd, fontSize: 17 },
+    cvRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
+    cvRowText: { fontFamily: FONTS.labelMd, fontSize: 13, flexShrink: 1 },
+    coverInput: {
+      fontFamily: FONTS.bodyMd,
+      fontSize: 14,
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 12,
+      minHeight: 100,
+      marginBottom: 14,
+    },
+    sendBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 7,
+      height: 48,
+      borderRadius: 24,
+    },
+    sendBtnText: { fontFamily: FONTS.headlineMd, fontSize: 15, fontWeight: '700' },
   });
 }

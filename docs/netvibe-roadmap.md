@@ -10,15 +10,17 @@
 - [ ] **iOS testi** — hər şey Android-də test edilib; iOS layout/audio yoxlanmalıdır.
 
 ## 2. Qısa müddət (1-2 ay)
-- [ ] **Axtarış + filtrlər** — vakansiyalarda (şəhər, maaş, sahə) və insanlarda (bacarıq, şəhər).
+- [x] **Axtarış + filtrlər** — vakansiyalarda (şəhər, maaş, sahə) və insanlarda. ✅ *Hazırdır*
 - [ ] **AI match təkmilləşdirilməsi** — `jobRecommendations.js` skorlama dərinləşdirilsin; uyğunsuz vakansiyalar gizlədilsin.
-- [ ] **İşəgötürən paneli** — müraciət edənlərin siyahısı, CV baxışı, status (uyğundur/imtina).
+- [x] **İşəgötürən paneli** — müraciət siyahısı, motivasiya məktubu, CV baxışı (profil fallback), status (baxıldı/uyğundur/imtina), status filtri, namizəd qeydləri. ✅ *Hazırdır*
 - [ ] **Chat gücləndirmə** — səs mesajı, şəkil/fayl, oxunma tickləri.
-- [ ] **Profil tamamlanması** — % göstəricisi + natamam hissələr üçün prompt. ⬅️ *BAŞLANDI*
+- [x] **Profil tamamlanması** — % göstəricisi + natamam hissələr üçün prompt. ✅ *Hazırdır*
 
 ## 3. Orta müddət (3-6 ay)
+- [ ] **İşəgötürən–namizəd chatı** — müraciətlər bölməsindən birbaşa söhbət açmaq. ⬅️ *Növbəti*
+- [ ] **Avtomatik status bildirişləri** — müraciət "baxıldı/qəbul/imtina" olanda namizədə push getməsi (push notification infrastrukturundan asılıdır).
 - [ ] **Təsdiqlənmiş profil nişanı** — e-poçt + telefon OTP.
-- [ ] **Offline/cache** — feed AsyncStorage-də; sürətli açılış.
+- [x] **Offline/cache** — 5 əsas ekran stale-while-revalidate keşi. ✅ *Hazırdır*
 - [ ] **Web versiya** — expo-web konfiqurasiya edilmişdir.
 - [ ] **Bildiriş mərkəzi** — qruplaşdırma, oxunmamış sayğacı.
 - [ ] **EAS Build** — real APK/IPA (Play Market / App Store üçün ön şərt).

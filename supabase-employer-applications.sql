@@ -3,6 +3,9 @@
 -- Run in SQL Editor. Safe to run multiple times.
 -- ============================================================
 
+-- Candidate notes (employer-only freeform text per application)
+ALTER TABLE job_applications ADD COLUMN IF NOT EXISTS notes TEXT;
+
 -- Employers (and admins) can SELECT applications submitted to their jobs
 DROP POLICY IF EXISTS "Employers can view applications to their jobs" ON job_applications;
 CREATE POLICY "Employers can view applications to their jobs"

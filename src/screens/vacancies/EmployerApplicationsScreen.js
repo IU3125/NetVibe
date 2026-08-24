@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
   ActivityIndicator, Linking, Alert, RefreshControl,
-  Platform, StatusBar,
+  Platform, StatusBar, TextInput,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { FONTS } from '../../constants/theme';
@@ -56,6 +56,31 @@ export default function EmployerApplicationsScreen({ onBack }) {
   const [selJob, setSelJob] = useState(null);
   const [applicants, setApplicants] = useState([]);
   const [appsLoading, setAppsLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [notesOpenId, setNotesOpenId] = useState(null);
+  const [noteDrafts, setNoteDrafts] = useState({});
+
+  const cvFor = (app) => app.cv_url || app.profile?.cv_url || null;
+
+  const filteredApplicants = statusFilter === 'all'
+    ? applicants
+    : applicants.filter(a => a.status === statusFilter);
+
+  const saveNote = async (appId) => {
+    const note = (noteDrafts[appId] ?? applicants.find(a => a.id === appId)?.notes ?? '').trim();
+    setApplicants(list => list.map(a => (a.id === appId ? { ...a, notes: note || null } : a)));
+    setNotesOpenId(null);
+    try {
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ notes: note || null })
+        .eq('id', appId);
+      if (error) throw error;
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', err.message);
+    }
+  };
 
   const loadJobs = useCallback(async () => {
     try {
@@ -94,6 +119,8 @@ export default function EmployerApplicationsScreen({ onBack }) {
 
   const openJob = async (job) => {
     setSelJob(job);
+    setStatusFilter('all');
+    setNotesOpenId(null);
     setAppsLoading(true);
     try {
       const { data: apps, error } = await supabase
@@ -108,7 +135,7 @@ export default function EmployerApplicationsScreen({ onBack }) {
       if (userIds.length) {
         const { data: profs } = await supabase
           .from('profiles')
-          .select('id, full_name, username, avatar_url, job_title')
+          .select('id, full_name, username, avatar_url, job_title, cv_url')
           .in('id', userIds);
         (profs || []).forEach(p => { profMap[p.id] = p; });
       }
@@ -227,6 +254,40 @@ export default function EmployerApplicationsScreen({ onBack }) {
           <ActivityIndicator style={{ marginTop: 24 }} color={colors.primary} />
         )}
 
+        {selJob && !appsLoading && applicants.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8, paddingBottom: 12 }}
+          >
+            {['all', 'applied', 'reviewed', 'accepted', 'rejected'].map(key => {
+              const active = statusFilter === key;
+              const label = key === 'all' ? t('filterAll') : appStatusLabel(key);
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={[
+                    styles.filterChip,
+                    { backgroundColor: colors.surfaceContainerLow, borderColor: colors.outlineVariant + '55' },
+                    active && { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer },
+                  ]}
+                  onPress={() => setStatusFilter(key)}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: colors.onSurfaceVariant },
+                      active && { color: colors.onPrimaryContainer, fontWeight: '700' },
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
+
         {selJob && !appsLoading && applicants.length === 0 && (
           <View style={[styles.emptyCard, { backgroundColor: colors.surfaceContainerLow }]}>
             <MaterialIcons name="person-off" size={40} color={colors.onSurfaceVariant} />
@@ -234,7 +295,7 @@ export default function EmployerApplicationsScreen({ onBack }) {
           </View>
         )}
 
-        {selJob && !appsLoading && applicants.map(app => {
+        {selJob && !appsLoading && filteredApplicants.map(app => {
           const p = app.profile;
           return (
             <View key={String(app.id)} style={[styles.appCard, { backgroundColor: colors.surfaceContainerLow }]}>
@@ -270,29 +331,58 @@ export default function EmployerApplicationsScreen({ onBack }) {
                 </Text>
               )}
 
+              {!!app.notes && notesOpenId !== app.id && (
+                <View style={[styles.notePreview, { backgroundColor: colors.surfaceContainer, borderLeftColor: colors.secondary }]}>
+                  <MaterialIcons name="sticky-note-2" size={13} color={colors.secondary} />
+                  <Text style={[styles.notePreviewText, { color: colors.onSurfaceVariant }]} numberOfLines={2}>
+                    {app.notes}
+                  </Text>
+                </View>
+              )}
+
               <View style={styles.actionRow}>
                 <TouchableOpacity
                   style={[
                     styles.cvBtn,
-                    { backgroundColor: app.cv_url ? colors.primaryContainer : colors.surfaceContainer },
+                    { backgroundColor: cvFor(app) ? colors.primaryContainer : colors.surfaceContainer },
                   ]}
-                  disabled={!app.cv_url}
-                  onPress={() => openCV(app.cv_url)}
+                  disabled={!cvFor(app)}
+                  onPress={() => openCV(cvFor(app))}
                 >
                   <MaterialIcons
                     name="description"
                     size={15}
-                    color={app.cv_url ? colors.onPrimaryContainer : colors.onSurfaceVariant}
+                    color={cvFor(app) ? colors.onPrimaryContainer : colors.onSurfaceVariant}
                   />
                   <Text
                     style={[
                       styles.cvBtnText,
-                      { color: app.cv_url ? colors.onPrimaryContainer : colors.onSurfaceVariant },
+                      { color: cvFor(app) ? colors.onPrimaryContainer : colors.onSurfaceVariant },
                     ]}
                     numberOfLines={1}
                   >
-                    {app.cv_url ? t('viewCV') : t('noCV')}
+                    {cvFor(app) ? t('viewCV') : t('noCV')}
                   </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.noteBtn,
+                    {
+                      borderColor: notesOpenId === app.id || app.notes ? colors.secondary : colors.outlineVariant + '66',
+                      backgroundColor: notesOpenId === app.id ? colors.secondary + '22' : 'transparent',
+                    },
+                  ]}
+                  onPress={() => {
+                    setNotesOpenId(notesOpenId === app.id ? null : app.id);
+                    setNoteDrafts(d => ({ ...d, [app.id]: app.notes || '' }));
+                  }}
+                >
+                  <MaterialIcons
+                    name="edit-note"
+                    size={15}
+                    color={notesOpenId === app.id || app.notes ? colors.secondary : colors.onSurfaceVariant}
+                  />
                 </TouchableOpacity>
 
                 <View style={{ flex: 1 }} />
@@ -313,6 +403,28 @@ export default function EmployerApplicationsScreen({ onBack }) {
                   );
                 })}
               </View>
+
+              {notesOpenId === app.id && (
+                <View style={[styles.noteEditor, { borderColor: colors.outlineVariant + '55' }]}>
+                  <TextInput
+                    style={[styles.noteInput, { color: colors.onSurface }]}
+                    placeholder={t('notePlaceholder')}
+                    placeholderTextColor={colors.onSurfaceVariant}
+                    value={noteDrafts[app.id] ?? ''}
+                    onChangeText={text => setNoteDrafts(d => ({ ...d, [app.id]: text }))}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                  <TouchableOpacity
+                    style={[styles.noteSaveBtn, { backgroundColor: colors.primaryContainer }]}
+                    onPress={() => saveNote(app.id)}
+                  >
+                    <MaterialIcons name="check" size={14} color={colors.onPrimaryContainer} />
+                    <Text style={[styles.noteSaveText, { color: colors.onPrimaryContainer }]}>{t('save')}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           );
         })}
@@ -408,4 +520,54 @@ const getStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  filterChip: {
+    height: 30,
+    paddingHorizontal: 13,
+    borderRadius: 15,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterChipText: { ...FONTS.labelMd, fontSize: 12 },
+  notePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    padding: 8,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+  },
+  notePreviewText: { ...FONTS.bodyMd, fontSize: 12, flexShrink: 1 },
+  noteBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noteEditor: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    gap: 8,
+  },
+  noteInput: {
+    fontFamily: FONTS.bodyMd,
+    fontSize: 13,
+    minHeight: 56,
+    textAlignVertical: 'top',
+  },
+  noteSaveBtn: {
+    flexDirection: 'row',
+    alignSelf: 'flex-end',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    height: 28,
+    borderRadius: 14,
+  },
+  noteSaveText: { ...FONTS.labelMd, fontSize: 12, fontWeight: '700' },
 });
