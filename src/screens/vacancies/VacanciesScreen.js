@@ -47,6 +47,7 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs, onE
   const [savedIds, setSavedIds] = useState({});
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isEmployer, setIsEmployer] = useState(false);
   const [cvData, setCvData] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [filterCity, setFilterCity] = useState(null);
@@ -84,6 +85,13 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs, onE
           .eq('id', user.id)
           .maybeSingle();
         setIsAdmin(!!prof?.is_admin);
+
+        const { data: ownJobs } = await supabase
+          .from('jobs')
+          .select('id')
+          .eq('employer_id', user.id)
+          .limit(1);
+        setIsEmployer(!!ownJobs && ownJobs.length > 0);
 
         const { data: cv } = await supabase
           .from('cv_data')
@@ -233,7 +241,7 @@ export default function VacanciesScreen({ onViewJob, onPostJob, onAdminJobs, onE
                   <MaterialIcons name="admin-panel-settings" size={20} color={colors.tertiary} />
                 </TouchableOpacity>
               )}
-              {onEmployerApps && (
+              {(isEmployer || isAdmin) && onEmployerApps && (
                 <TouchableOpacity
                   style={[styles.adminBtn, { backgroundColor: colors.surfaceContainerLow, borderColor: colors.outlineVariant + '44' }]}
                   onPress={onEmployerApps}
