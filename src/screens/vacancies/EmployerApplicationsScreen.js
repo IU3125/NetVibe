@@ -34,7 +34,7 @@ const JOB_STATUS_META = {
 const APP_ACTIONS = [
   { key: 'reviewed', icon: 'visibility', color: '#3b82f6' },
   { key: 'accepted', icon: 'check-circle', color: '#22c55e' },
-  { key: 'rejected', icon: 'close-circle', color: '#ef4444' },
+  { key: 'rejected', icon: 'cancel', color: '#ef4444' },
 ];
 
 const APP_STATUS_COLOR = {
