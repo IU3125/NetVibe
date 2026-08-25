@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import * as Sentry from 'sentry-expo';
+import * as Sentry from '@sentry/react-native';
 
 const IP_API = 'https://api.ipify.org?format=json';
 const GEO_API = 'http://ip-api.com/json';

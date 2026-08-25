@@ -19,7 +19,7 @@ import { LocaleProvider } from './src/i18n/LocaleContext';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import CallManager from './src/components/CallManager';
 import Constants from 'expo-constants';
-import * as Sentry from 'sentry-expo';
+import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
   dsn: Constants.expoConfig?.extra?.sentryDsn,
