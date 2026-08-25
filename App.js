@@ -40,6 +40,8 @@ function App() {
   const [phase, setPhase] = useState('loading');
   const [targetScreen, setTargetScreen] = useState(null);
 
+  throw new Error('sentry test'); // TEMP — Sentry test, sonra silinir
+
   useEffect(() => {
     async function init() {
       try {
