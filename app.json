@@ -38,7 +38,6 @@
       ],
       "expo-video",
       "expo-audio",
-      "sentry-expo",
       "@sentry/react-native"
     ],
     "extra": {
