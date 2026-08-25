@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import * as Sentry from 'sentry-expo';
 
 const IP_API = 'https://api.ipify.org?format=json';
 const GEO_API = 'http://ip-api.com/json';
@@ -7,6 +8,8 @@ export async function trackLogin() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    Sentry.setUser({ id: user.id, email: user.email || undefined });
 
     let ip = 'Unknown';
     try {

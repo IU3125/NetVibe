@@ -18,10 +18,18 @@ import { supabase } from './src/lib/supabase';
 import { LocaleProvider } from './src/i18n/LocaleContext';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import CallManager from './src/components/CallManager';
+import Constants from 'expo-constants';
+import * as Sentry from 'sentry-expo';
+
+Sentry.init({
+  dsn: Constants.expoConfig?.extra?.sentryDsn,
+  enableInExpoDevelopment: true,
+  debug: false,
+});
 
 const ONBOARDING_KEY = '@netvibe_onboarding_completed';
 
-export default function App() {
+function App() {
   const [fontsLoaded] = useFonts({
     BeVietnamPro_400Regular,
     BeVietnamPro_500Medium,
@@ -74,6 +82,7 @@ export default function App() {
   }, []);
 
   const handleSignOut = useCallback(() => {
+    Sentry.setUser(null);
     setPhase('login');
   }, []);
 
@@ -127,3 +136,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
+export default Sentry.wrap(App);

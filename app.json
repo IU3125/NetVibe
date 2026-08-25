@@ -37,7 +37,12 @@
         }
       ],
       "expo-video",
-      "expo-audio"
-    ]
+      "expo-audio",
+      "sentry-expo",
+      "@sentry/react-native"
+    ],
+    "extra": {
+      "sentryDsn": "https://17751742d15adb5ecda925e0ebf2f02b@o4511971427024896.ingest.de.sentry.io/4511971432398928"
+    }
   }
 }
