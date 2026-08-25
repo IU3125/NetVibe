@@ -24,7 +24,7 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: Constants.expoConfig?.extra?.sentryDsn,
   enableInExpoDevelopment: true,
-  debug: true,
+  debug: false,
 });
 
 const ONBOARDING_KEY = '@netvibe_onboarding_completed';
@@ -39,12 +39,6 @@ function App() {
 
   const [phase, setPhase] = useState('loading');
   const [targetScreen, setTargetScreen] = useState(null);
-
-  // TEMP — Sentry test: delayed throw so SDK has time to send
-  useEffect(() => {
-    const timer = setTimeout(() => { throw new Error('sentry test'); }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     async function init() {
