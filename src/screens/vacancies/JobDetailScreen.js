@@ -387,29 +387,43 @@ export default function JobDetailScreen({ job, onBack }) {
         </View>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: 'rgba(255,255,255,0.05)' }]}>
+      <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.outlineVariant + '22' }]}>
         <View style={styles.bottomBarInner}>
-          <TouchableOpacity style={[styles.bookmarkBtn, { backgroundColor: colors.surfaceVariant }]} onPress={toggleSaved}>
+          <TouchableOpacity
+            style={[styles.bookmarkBtn, { backgroundColor: colors.surfaceVariant, borderColor: colors.outlineVariant + '44' }]}
+            onPress={toggleSaved}
+            activeOpacity={0.7}
+          >
             <MaterialIcons
               name={saved ? 'bookmark' : 'bookmark-border'}
-              size={24}
+              size={22}
               color={saved ? colors.primary : colors.onSurfaceVariant}
             />
           </TouchableOpacity>
           {applied ? (
-            <View style={[styles.applyBtn, { backgroundColor: colors.secondary + '22' }]}>
-              <MaterialIcons name="check-circle" size={20} color={colors.secondary} />
+            <View style={[styles.applyBtn, { backgroundColor: colors.secondaryContainer, borderColor: colors.secondary + '33' }]}>
+              <MaterialIcons name="check-circle" size={19} color={colors.secondary} />
               <Text style={[styles.applyBtnText, { color: colors.secondary }]}>
-                Applied · {applied.status}
+                {applied.status === 'accepted' ? t('accepted') : applied.status === 'rejected' ? t('rejected') : t('applied')}
               </Text>
             </View>
           ) : (
             <TouchableOpacity
-              style={[styles.applyBtn, { backgroundColor: colors.primaryContainer }]}
+              style={styles.applyBtnGradient}
               activeOpacity={0.85}
               onPress={openApplyModal}
             >
-              <Text style={[styles.applyBtnText, { color: colors.onPrimaryContainer }]}>Apply the post</Text>
+              <LinearGradient
+                colors={[colors.primary, colors.primary + 'CC']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.applyBtnGradInner}
+              >
+                <MaterialIcons name="send" size={18} color={colors.onPrimary} />
+                <Text style={[styles.applyBtnText, { color: colors.onPrimary }]}>
+                  {t('applyNow')}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           )}
         </View>
@@ -423,13 +437,15 @@ export default function JobDetailScreen({ job, onBack }) {
               <View style={[styles.grabberBar, { backgroundColor: colors.outlineVariant }]} />
             </View>
             <View style={styles.sheetHeader}>
-              <MaterialIcons name="send" size={18} color={colors.primary} />
+              <View style={[styles.sheetIconWrap, { backgroundColor: colors.primaryContainer }]}>
+                <MaterialIcons name="send" size={16} color={colors.onPrimaryContainer} />
+              </View>
               <Text style={[styles.sheetTitle, { color: colors.onSurface }]}>{t('applyModalTitle')}</Text>
             </View>
 
-            <View style={styles.cvRow}>
+            <View style={[styles.cvRow, { backgroundColor: userCvUrl ? colors.primaryContainer + '44' : colors.error + '1A', borderColor: userCvUrl ? colors.primary + '33' : colors.error + '33' }]}>
               <MaterialIcons
-                name="description"
+                name={userCvUrl ? 'description' : 'warning'}
                 size={16}
                 color={userCvUrl ? colors.primary : colors.error}
               />
@@ -441,7 +457,7 @@ export default function JobDetailScreen({ job, onBack }) {
                 numberOfLines={1}
               >
                 {userCvUrl
-                  ? `${t('yourCv')}: ${decodeURIComponent(userCvUrl.split('/').pop() || 'CV.pdf')}`
+                  ? `${decodeURIComponent(userCvUrl.split('/').pop() || 'CV.pdf')}`
                   : t('noCvWarning')}
               </Text>
             </View>
@@ -449,7 +465,7 @@ export default function JobDetailScreen({ job, onBack }) {
             <TextInput
               style={[
                 styles.coverInput,
-                { borderColor: colors.outlineVariant + '66', color: colors.onSurface },
+                { borderColor: colors.outlineVariant + '55', color: colors.onSurface, backgroundColor: colors.surfaceContainer },
               ]}
               placeholder={t('coverLetterHint')}
               placeholderTextColor={colors.onSurfaceVariant}
@@ -461,21 +477,28 @@ export default function JobDetailScreen({ job, onBack }) {
             />
 
             <TouchableOpacity
-              style={[styles.sendBtn, { backgroundColor: colors.primaryContainer }]}
+              style={styles.sendBtnGradient}
               activeOpacity={0.85}
               onPress={apply}
               disabled={applying}
             >
-              {applying ? (
-                <ActivityIndicator size="small" color={colors.onPrimaryContainer} />
-              ) : (
-                <>
-                  <MaterialIcons name="check-circle" size={17} color={colors.onPrimaryContainer} />
-                  <Text style={[styles.sendBtnText, { color: colors.onPrimaryContainer }]}>
-                    {t('sendApplication')}
-                  </Text>
-                </>
-              )}
+              <LinearGradient
+                colors={[colors.primary, colors.primary + 'CC']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.sendBtnGradInner}
+              >
+                {applying ? (
+                  <ActivityIndicator size="small" color={colors.onPrimary} />
+                ) : (
+                  <>
+                    <MaterialIcons name="check-circle" size={17} color={colors.onPrimary} />
+                    <Text style={[styles.sendBtnText, { color: colors.onPrimary }]}>
+                      {t('sendApplication')}
+                    </Text>
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -576,15 +599,31 @@ function getStyles(colors) {
       flexDirection: 'row', alignItems: 'center', gap: 16,
     },
     bookmarkBtn: {
-      width: 52, height: 52, borderRadius: 12,
+      width: 52, height: 52, borderRadius: 16,
       justifyContent: 'center', alignItems: 'center',
+      borderWidth: 1,
     },
     applyBtn: {
-      flex: 1, height: 52, borderRadius: 12,
+      flex: 1, height: 52, borderRadius: 16,
+      flexDirection: 'row', gap: 8,
+      justifyContent: 'center', alignItems: 'center',
+      borderWidth: 1,
+    },
+    applyBtnGradient: {
+      flex: 1, height: 52, borderRadius: 16,
+      overflow: 'hidden',
+      elevation: 4,
+      shadowColor: colors.primary,
+      shadowOpacity: 0.35,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+    },
+    applyBtnGradInner: {
+      flex: 1, height: 52, borderRadius: 16,
       flexDirection: 'row', gap: 8,
       justifyContent: 'center', alignItems: 'center',
     },
-    applyBtnText: { fontFamily: FONTS.headlineMd, fontSize: 18, fontWeight: '700' },
+    applyBtnText: { fontFamily: FONTS.headlineMd, fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
     successGlow: {
       backgroundColor: 'transparent',
       opacity: 1,
@@ -646,9 +685,13 @@ function getStyles(colors) {
     },
     sheetGrabber: { alignItems: 'center', paddingBottom: 10 },
     grabberBar: { width: 40, height: 4, borderRadius: 2 },
-    sheetHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-    sheetTitle: { fontFamily: FONTS.headlineMd, fontSize: 17 },
-    cvRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
+    sheetHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+    sheetIconWrap: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+    sheetTitle: { fontFamily: FONTS.headlineMd, fontSize: 17, fontWeight: '700' },
+    cvRow: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      marginBottom: 14, padding: 12, borderRadius: 12, borderWidth: 1,
+    },
     cvRowText: { fontFamily: FONTS.labelMd, fontSize: 13, flexShrink: 1 },
     coverInput: {
       fontFamily: FONTS.bodyMd,
@@ -659,13 +702,23 @@ function getStyles(colors) {
       minHeight: 100,
       marginBottom: 14,
     },
-    sendBtn: {
+    sendBtnGradient: {
+      height: 50,
+      borderRadius: 16,
+      overflow: 'hidden',
+      elevation: 4,
+      shadowColor: colors.primary,
+      shadowOpacity: 0.35,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+    },
+    sendBtnGradInner: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 7,
-      height: 48,
-      borderRadius: 24,
+      gap: 8,
+      borderRadius: 16,
     },
     sendBtnText: { fontFamily: FONTS.headlineMd, fontSize: 15, fontWeight: '700' },
   });
