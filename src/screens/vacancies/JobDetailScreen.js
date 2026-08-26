@@ -105,7 +105,6 @@ export default function JobDetailScreen({ job, onBack }) {
   }, [jobId]);
 
   const openApplyModal = async () => {
-    sheetTranslateY.setValue(0);
     setShowApplyModal(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -633,10 +632,9 @@ function getStyles(colors) {
       paddingVertical: 6,
     },
     applyOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      flex: 1,
       backgroundColor: 'rgba(0,0,0,0.55)',
       justifyContent: 'flex-end',
-      zIndex: 999,
     },
     applySheet: {
       borderTopLeftRadius: 22,
