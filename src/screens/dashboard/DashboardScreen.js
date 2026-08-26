@@ -106,6 +106,11 @@ export default function DashboardScreen({ onSignOut }) {
   };
   const handleCloseConversation = () => { setSelectedConversation(null); setSubScreen('inbox'); };
 
+  const handleOpenChat = (convData) => {
+    setSelectedConversation(convData);
+    setSubScreen('conversation');
+  };
+
   const handleAddStory = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -153,7 +158,13 @@ export default function DashboardScreen({ onSignOut }) {
   if (selectedConversation) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ConversationScreen conversation={selectedConversation} onBack={handleCloseConversation} />
+        <ConversationScreen
+          conversationId={selectedConversation.id}
+          onBack={handleCloseConversation}
+          restricted={selectedConversation.restricted || false}
+          onViewProfile={handleViewProfile}
+          partnerId={selectedConversation.partnerId}
+        />
       </View>
     );
   }
@@ -177,7 +188,13 @@ export default function DashboardScreen({ onSignOut }) {
   if (subScreen === 'conversation' && selectedConversation) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ConversationScreen conversation={selectedConversation} onBack={handleCloseConversation} />
+        <ConversationScreen
+          conversationId={selectedConversation.id}
+          onBack={handleCloseConversation}
+          restricted={selectedConversation.restricted || false}
+          onViewProfile={handleViewProfile}
+          partnerId={selectedConversation.partnerId}
+        />
       </View>
     );
   }
@@ -276,7 +293,11 @@ export default function DashboardScreen({ onSignOut }) {
   if (subScreen === 'employerApps') {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <EmployerApplicationsScreen onBack={handleBack} />
+        <EmployerApplicationsScreen
+          onBack={handleBack}
+          onOpenChat={handleOpenChat}
+          onViewProfile={handleViewProfile}
+        />
       </View>
     );
   }

@@ -32,7 +32,7 @@ const getDayLabel = (d) => {
 
 const REPORT_REASONS = ['Spam or scam', 'Inappropriate content', 'Harassment', 'Offensive language', 'Other'];
 
-export default function ConversationScreen({ conversationId, onBack }) {
+export default function ConversationScreen({ conversationId, onBack, restricted, onViewProfile, partnerId }) {
   const { colors } = useTheme();
   const [messages, setMessages] = useState([]);
   const [reactions, setReactions] = useState({});
@@ -584,13 +584,19 @@ export default function ConversationScreen({ conversationId, onBack }) {
         <TouchableOpacity onPress={onBack} style={styles.headerBtn}>
           <MaterialIcons name="arrow-back" size={24} color={colors.onSurface} />
         </TouchableOpacity>
-        {other?.avatar_url ? (
-          <Image source={{ uri: other.avatar_url }} style={styles.headerAvatar} />
-        ) : (
-          <View style={[styles.headerAvatar, { backgroundColor: colors.surfaceVariant, justifyContent: 'center', alignItems: 'center' }]}>
-            <MaterialIcons name="person" size={20} color={colors.onSurfaceVariant} />
-          </View>
-        )}
+        <TouchableOpacity
+          onPress={() => restricted && onViewProfile && partnerId && onViewProfile(partnerId)}
+          disabled={!restricted}
+          activeOpacity={0.7}
+        >
+          {other?.avatar_url ? (
+            <Image source={{ uri: other.avatar_url }} style={styles.headerAvatar} />
+          ) : (
+            <View style={[styles.headerAvatar, { backgroundColor: colors.surfaceVariant, justifyContent: 'center', alignItems: 'center' }]}>
+              <MaterialIcons name="person" size={20} color={colors.onSurfaceVariant} />
+            </View>
+          )}
+        </TouchableOpacity>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.headerName, { color: colors.onSurface }]} numberOfLines={1}>
             {other?.full_name || other?.username || 'User'}
@@ -599,12 +605,21 @@ export default function ConversationScreen({ conversationId, onBack }) {
             {otherTyping ? 'typing...' : (otherIsOnline ? 'Active now' : (other?.last_seen ? `Last seen ${formatClock(other.last_seen)}` : ''))}
           </Text>
         </View>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => startCall('audio')}>
-          <MaterialIcons name="call" size={22} color={colors.onSurfaceVariant} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => startCall('video')}>
-          <MaterialIcons name="videocam" size={22} color={colors.onSurfaceVariant} />
-        </TouchableOpacity>
+        {!restricted && (
+          <>
+            <TouchableOpacity style={styles.headerBtn} onPress={() => startCall('audio')}>
+              <MaterialIcons name="call" size={22} color={colors.onSurfaceVariant} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerBtn} onPress={() => startCall('video')}>
+              <MaterialIcons name="videocam" size={22} color={colors.onSurfaceVariant} />
+            </TouchableOpacity>
+          </>
+        )}
+        {restricted && onViewProfile && partnerId && (
+          <TouchableOpacity style={styles.headerBtn} onPress={() => onViewProfile(partnerId)}>
+            <MaterialIcons name="person" size={22} color={colors.onSurfaceVariant} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {loading ? (
@@ -693,9 +708,11 @@ export default function ConversationScreen({ conversationId, onBack }) {
               <MaterialIcons name="mic" size={22} color={colors.primary} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={pickImage} style={styles.iconBtn}>
-            <MaterialIcons name="image" size={24} color={colors.primary} />
-          </TouchableOpacity>
+          {!restricted && (
+            <TouchableOpacity onPress={pickImage} style={styles.iconBtn}>
+              <MaterialIcons name="image" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          )}
           <TextInput
             style={[styles.input, { backgroundColor: colors.surfaceContainerLow, color: colors.onSurface }]}
             placeholder="Message..."
@@ -739,10 +756,12 @@ export default function ConversationScreen({ conversationId, onBack }) {
                 </TouchableOpacity>
               </>
             )}
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setShowReport(actionMsg); setActionMsg(null); }}>
-              <MaterialIcons name="report-gmailerrorred" size={22} color={colors.onSurfaceVariant} />
-              <Text style={styles.menuItemText}>Report</Text>
-            </TouchableOpacity>
+            {!restricted && (
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setShowReport(actionMsg); setActionMsg(null); }}>
+                <MaterialIcons name="report-gmailerrorred" size={22} color={colors.onSurfaceVariant} />
+                <Text style={styles.menuItemText}>Report</Text>
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>

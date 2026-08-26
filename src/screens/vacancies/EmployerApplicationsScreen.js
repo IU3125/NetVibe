@@ -45,7 +45,7 @@ const APP_STATUS_COLOR = {
   rejected: '#ef4444',
 };
 
-export default function EmployerApplicationsScreen({ onBack }) {
+export default function EmployerApplicationsScreen({ onBack, onOpenChat, onViewProfile }) {
   const { t } = useLocale();
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
@@ -312,9 +312,11 @@ export default function EmployerApplicationsScreen({ onBack }) {
                   </View>
                 )}
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.appName, { color: colors.onSurface }]} numberOfLines={1}>
-                    {p?.full_name || p?.username || 'User'}
-                  </Text>
+                  <TouchableOpacity onPress={() => onViewProfile && onViewProfile(app.user_id)} activeOpacity={0.6}>
+                    <Text style={[styles.appName, { color: colors.onSurface }]} numberOfLines={1}>
+                      {p?.full_name || p?.username || 'User'}
+                    </Text>
+                  </TouchableOpacity>
                   {!!p?.job_title && (
                     <Text style={[styles.appRole, { color: colors.onSurfaceVariant }]} numberOfLines={1}>{p.job_title}</Text>
                   )}
@@ -404,6 +406,32 @@ export default function EmployerApplicationsScreen({ onBack }) {
                     </TouchableOpacity>
                   );
                 })}
+
+                {app.status === 'accepted' && onOpenChat && (
+                  <TouchableOpacity
+                    style={[styles.chatBtn, { backgroundColor: '#22c55e22', borderColor: '#22c55e' }]}
+                    onPress={async () => {
+                      try {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) return;
+                        const { data: convId, error } = await supabase.rpc('get_or_create_conversation', { other_user_id: app.user_id });
+                        if (error) throw error;
+                        onOpenChat({
+                          id: convId,
+                          restricted: true,
+                          partnerId: app.user_id,
+                          partnerName: p?.full_name || p?.username || 'User',
+                          partnerAvatar: p?.avatar_url,
+                          jobTitle: selJob?.title,
+                        });
+                      } catch (err) {
+                        Alert.alert('Error', err.message);
+                      }
+                    }}
+                  >
+                    <MaterialIcons name="chat" size={15} color="#22c55e" />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {notesOpenId === app.id && (
@@ -575,6 +603,14 @@ const getStyles = (colors) => StyleSheet.create({
   },
   notePreviewText: { ...FONTS.bodyMd, fontSize: 12, flexShrink: 1 },
   noteBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatBtn: {
     width: 30,
     height: 30,
     borderRadius: 15,
