@@ -441,6 +441,7 @@ export default function JobDetailScreen({ job, onBack }) {
             </TouchableOpacity>
           )}
         </View>
+      </View>
 
       {/* Apply modal */}
       {showApplyModal && (
@@ -541,7 +542,6 @@ export default function JobDetailScreen({ job, onBack }) {
           </View>
         </View>
       )}
-      </View>
     </View>
   );
 }
