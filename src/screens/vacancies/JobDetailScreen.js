@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, Platform, StatusBar, ActivityIndicator, Share, Animated, TextInput,
+  Image, Platform, StatusBar, ActivityIndicator, Share, Animated, TextInput, Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -444,10 +444,15 @@ export default function JobDetailScreen({ job, onBack }) {
       </View>
 
       {/* Apply modal */}
-      {showApplyModal && (
+      <Modal
+        visible={showApplyModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowApplyModal(false)}
+      >
         <View style={styles.applyOverlay}>
           <TouchableOpacity
-            style={{ flex: 1 }}
+            style={styles.applyOverlayBackdrop}
             activeOpacity={1}
             onPress={() => setShowApplyModal(false)}
           />
@@ -541,7 +546,7 @@ export default function JobDetailScreen({ job, onBack }) {
             </View>
           </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 }
@@ -746,20 +751,17 @@ function getStyles(colors) {
       paddingVertical: 6,
     },
     applyOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      flex: 1,
       backgroundColor: 'rgba(0,0,0,0.50)',
       justifyContent: 'flex-end',
-      zIndex: 999,
+    },
+    applyOverlayBackdrop: {
+      flex: 1,
     },
     applySheet: {
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      height: '62%',
-      shadowColor: '#000',
-      shadowOpacity: 0.25,
-      shadowRadius: 20,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 20,
+      maxHeight: '65%',
     },
     sheetGrabber: { alignItems: 'center', paddingBottom: 8 },
     grabberBar: { width: 36, height: 4, borderRadius: 2 },
