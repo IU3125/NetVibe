@@ -447,7 +447,7 @@ export default function JobDetailScreen({ job, onBack }) {
       {showApplyModal && (
         <View style={styles.applyOverlay}>
           <TouchableOpacity
-            style={styles.applyOverlayBackdrop}
+            style={{ flex: 1 }}
             activeOpacity={1}
             onPress={() => setShowApplyModal(false)}
           />
@@ -747,19 +747,14 @@ function getStyles(colors) {
     },
     applyOverlay: {
       ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.50)',
+      justifyContent: 'flex-end',
       zIndex: 999,
     },
-    applyOverlayBackdrop: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.50)',
-    },
     applySheet: {
-      position: 'absolute',
-      left: 0, right: 0, bottom: 0,
-      height: '62%',
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      paddingTop: 10,
+      height: '62%',
       shadowColor: '#000',
       shadowOpacity: 0.25,
       shadowRadius: 20,
