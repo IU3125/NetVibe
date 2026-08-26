@@ -342,6 +342,28 @@ export default function JobDetailScreen({ job, onBack }) {
             </View>
           </View>
 
+          <View style={styles.applyBannerWrap}>
+            <LinearGradient
+              colors={[colors.error + 'DD', colors.error + '88', colors.error + '44']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.applyBanner}
+            >
+              <View style={styles.applyBannerLeft}>
+                <View style={styles.applyBannerIconWrap}>
+                  <MaterialIcons name="schedule" size={26} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.applyBannerLabel}>{t('applyBefore')}</Text>
+                  <Text style={styles.applyBannerValue}>
+                    {formatDate(d.apply_before) || t('openUntilFilled')}
+                  </Text>
+                </View>
+              </View>
+              <MaterialIcons name="arrow-forward-ios" size={14} color="rgba(255,255,255,0.5)" />
+            </LinearGradient>
+          </View>
+
           <View style={[styles.card, { backgroundColor: colors.surfaceContainerLow, borderColor: colors.outlineVariant + '33' }]}>
             <View style={styles.cardHeader}>
               <MaterialIcons name="description" size={22} color={colors.primary} />
@@ -396,28 +418,6 @@ export default function JobDetailScreen({ job, onBack }) {
                 </View>
               ))}
             </View>
-          </View>
-
-          <View style={styles.applyBannerWrap}>
-            <LinearGradient
-              colors={[colors.error + 'DD', colors.error + '88', colors.error + '44']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.applyBanner}
-            >
-              <View style={styles.applyBannerLeft}>
-                <View style={styles.applyBannerIconWrap}>
-                  <MaterialIcons name="schedule" size={26} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.applyBannerLabel}>{t('applyBefore')}</Text>
-                  <Text style={styles.applyBannerValue}>
-                    {formatDate(d.apply_before) || t('openUntilFilled')}
-                  </Text>
-                </View>
-              </View>
-              <MaterialIcons name="arrow-forward-ios" size={14} color="rgba(255,255,255,0.5)" />
-            </LinearGradient>
           </View>
         </View>
       </ScrollView>
@@ -783,7 +783,7 @@ function getStyles(colors) {
     applySheet: {
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      maxHeight: '65%',
+      maxHeight: '75%',
     },
     sheetGrabber: { alignItems: 'center', paddingBottom: 8 },
     grabberBar: { width: 36, height: 4, borderRadius: 2 },
