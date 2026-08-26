@@ -37,8 +37,7 @@ export default function JobDetailScreen({ job, onBack }) {
 
   const sheetPanResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 8,
+      onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gs) => {
         if (gs.dy > 0) sheetTranslateY.setValue(gs.dy);
       },
@@ -478,18 +477,19 @@ export default function JobDetailScreen({ job, onBack }) {
             activeOpacity={1}
             onPress={() => setShowApplyModal(false)}
           />
-          <Animated.View style={[styles.applySheet, { backgroundColor: colors.surfaceContainerLow, transform: [{ translateY: sheetTranslateY }] }]} {...sheetPanResponder.panHandlers}>
-            {/* Drag handle */}
-            <View style={styles.sheetGrabber}>
-              <View style={[styles.grabberBar, { backgroundColor: colors.outlineVariant }]} />
-            </View>
+          <Animated.View style={[styles.applySheet, { backgroundColor: colors.surfaceContainerLow, transform: [{ translateY: sheetTranslateY }] }]}>
+            {/* Drag handle + Header */}
+            <View {...sheetPanResponder.panHandlers}>
+              <View style={styles.sheetGrabber}>
+                <View style={[styles.grabberBar, { backgroundColor: colors.outlineVariant }]} />
+              </View>
 
-            {/* Header: title + close */}
-            <View style={[styles.sheetHeader, { borderBottomColor: colors.outlineVariant + '33' }]}>
-              <Text style={[styles.sheetTitle, { color: colors.onSurface }]}>{t('applyModalTitle')}</Text>
-              <TouchableOpacity onPress={() => setShowApplyModal(false)} style={styles.sheetCloseBtn}>
-                <MaterialIcons name="close" size={22} color={colors.onSurfaceVariant} />
-              </TouchableOpacity>
+              <View style={[styles.sheetHeader, { borderBottomColor: colors.outlineVariant + '33' }]}>
+                <Text style={[styles.sheetTitle, { color: colors.onSurface }]}>{t('applyModalTitle')}</Text>
+                <TouchableOpacity onPress={() => setShowApplyModal(false)} style={styles.sheetCloseBtn}>
+                  <MaterialIcons name="close" size={22} color={colors.onSurfaceVariant} />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetScrollContent} keyboardShouldPersistTaps="handled">
