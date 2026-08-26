@@ -377,12 +377,26 @@ export default function JobDetailScreen({ job, onBack }) {
             </View>
           </View>
 
-          <View style={[styles.applyCard, { backgroundColor: colors.error + '1A', borderColor: colors.error + '33' }]}>
-            <MaterialIcons name="event-busy" size={22} color={colors.error} />
-            <View>
-              <Text style={[styles.applyLabel, { color: colors.error }]}>Apply before</Text>
-              <Text style={styles.applyValue}>{formatDate(d.apply_before) || 'Open until filled'}</Text>
-            </View>
+          <View style={styles.applyBannerWrap}>
+            <LinearGradient
+              colors={[colors.error + 'DD', colors.error + '88', colors.error + '44']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.applyBanner}
+            >
+              <View style={styles.applyBannerLeft}>
+                <View style={styles.applyBannerIconWrap}>
+                  <MaterialIcons name="schedule" size={26} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.applyBannerLabel}>{t('applyBefore')}</Text>
+                  <Text style={styles.applyBannerValue}>
+                    {formatDate(d.apply_before) || t('openUntilFilled')}
+                  </Text>
+                </View>
+              </View>
+              <MaterialIcons name="arrow-forward-ios" size={14} color="rgba(255,255,255,0.5)" />
+            </LinearGradient>
           </View>
         </View>
       </ScrollView>
@@ -580,13 +594,50 @@ function getStyles(colors) {
     perkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     perkChip: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
     perkText: { fontFamily: FONTS.bodyMd, fontSize: 13, color: colors.onSurface },
-    applyCard: {
-      flexDirection: 'row', alignItems: 'center', gap: 12,
-      borderRadius: 12, borderWidth: 1,
-      padding: 16,
+    applyBannerWrap: {
+      borderRadius: 16,
+      overflow: 'hidden',
+      elevation: 6,
+      shadowColor: colors.error,
+      shadowOpacity: 0.3,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 6 },
     },
-    applyLabel: { fontFamily: FONTS.labelMd, fontSize: 12 },
-    applyValue: { fontFamily: FONTS.bodyMd, fontSize: 14, fontWeight: '600', color: colors.onSurface },
+    applyBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 18,
+      gap: 14,
+    },
+    applyBannerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      flex: 1,
+    },
+    applyBannerIconWrap: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    applyBannerLabel: {
+      fontFamily: FONTS.labelMd,
+      fontSize: 11,
+      color: 'rgba(255,255,255,0.75)',
+      textTransform: 'uppercase',
+      letterSpacing: 1.2,
+      marginBottom: 3,
+    },
+    applyBannerValue: {
+      fontFamily: FONTS.headlineMd,
+      fontSize: 17,
+      fontWeight: '700',
+      color: '#fff',
+    },
     bottomBar: {
       position: 'absolute', bottom: 0, left: 0, right: 0,
       borderTopWidth: 1,
