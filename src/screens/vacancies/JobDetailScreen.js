@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, Platform, StatusBar, ActivityIndicator, Share, Animated, TextInput, Modal,
+  Image, Platform, StatusBar, ActivityIndicator, Share, Animated, TextInput, Modal, PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -33,6 +33,27 @@ export default function JobDetailScreen({ job, onBack }) {
   const [coverText, setCoverText] = useState('');
   const [userCvUrl, setUserCvUrl] = useState(null);
   const ping = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(0)).current;
+
+  const sheetPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 8,
+      onPanResponderMove: (_, gs) => {
+        if (gs.dy > 0) sheetTranslateY.setValue(gs.dy);
+      },
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dy > 120 || gs.vy > 0.8) {
+          Animated.timing(sheetTranslateY, { toValue: 600, duration: 250, useNativeDriver: true }).start(() => {
+            sheetTranslateY.setValue(0);
+            setShowApplyModal(false);
+          });
+        } else {
+          Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, bounciness: 10 }).start();
+        }
+      },
+    })
+  ).current;
 
   useEffect(() => {
     if (!showSuccess) return;
@@ -105,6 +126,7 @@ export default function JobDetailScreen({ job, onBack }) {
   }, [jobId]);
 
   const openApplyModal = async () => {
+    sheetTranslateY.setValue(0);
     setShowApplyModal(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -456,7 +478,7 @@ export default function JobDetailScreen({ job, onBack }) {
             activeOpacity={1}
             onPress={() => setShowApplyModal(false)}
           />
-          <View style={[styles.applySheet, { backgroundColor: colors.surfaceContainerLow }]}>
+          <Animated.View style={[styles.applySheet, { backgroundColor: colors.surfaceContainerLow, transform: [{ translateY: sheetTranslateY }] }]} {...sheetPanResponder.panHandlers}>
             {/* Drag handle */}
             <View style={styles.sheetGrabber}>
               <View style={[styles.grabberBar, { backgroundColor: colors.outlineVariant }]} />
@@ -544,7 +566,7 @@ export default function JobDetailScreen({ job, onBack }) {
                 </LinearGradient>
               </TouchableOpacity>
             </View>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
