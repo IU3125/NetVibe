@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, Platform, StatusBar, ActivityIndicator, Share, Animated, TextInput, Modal, PanResponder,
+  Image, Platform, StatusBar, ActivityIndicator, Share, Animated, TextInput, Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -33,26 +33,6 @@ export default function JobDetailScreen({ job, onBack }) {
   const [coverText, setCoverText] = useState('');
   const [userCvUrl, setUserCvUrl] = useState(null);
   const ping = useRef(new Animated.Value(0)).current;
-  const sheetTranslateY = useRef(new Animated.Value(0)).current;
-
-  const sheetPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gs) => {
-        if (gs.dy > 0) sheetTranslateY.setValue(gs.dy);
-      },
-      onPanResponderRelease: (_, gs) => {
-        if (gs.dy > 120 || gs.vy > 0.8) {
-          Animated.timing(sheetTranslateY, { toValue: 600, duration: 250, useNativeDriver: true }).start(() => {
-            sheetTranslateY.setValue(0);
-            setShowApplyModal(false);
-          });
-        } else {
-          Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, bounciness: 10 }).start();
-        }
-      },
-    })
-  ).current;
 
   useEffect(() => {
     if (!showSuccess) return;
@@ -342,28 +322,6 @@ export default function JobDetailScreen({ job, onBack }) {
             </View>
           </View>
 
-          <View style={styles.applyBannerWrap}>
-            <LinearGradient
-              colors={[colors.error + 'DD', colors.error + '88', colors.error + '44']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.applyBanner}
-            >
-              <View style={styles.applyBannerLeft}>
-                <View style={styles.applyBannerIconWrap}>
-                  <MaterialIcons name="schedule" size={26} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.applyBannerLabel}>{t('applyBefore')}</Text>
-                  <Text style={styles.applyBannerValue}>
-                    {formatDate(d.apply_before) || t('openUntilFilled')}
-                  </Text>
-                </View>
-              </View>
-              <MaterialIcons name="arrow-forward-ios" size={14} color="rgba(255,255,255,0.5)" />
-            </LinearGradient>
-          </View>
-
           <View style={[styles.card, { backgroundColor: colors.surfaceContainerLow, borderColor: colors.outlineVariant + '33' }]}>
             <View style={styles.cardHeader}>
               <MaterialIcons name="description" size={22} color={colors.primary} />
@@ -386,14 +344,6 @@ export default function JobDetailScreen({ job, onBack }) {
               <Text style={styles.cardTitle}>Qualifications</Text>
             </View>
             {bullets(d.qualifications, colors.tertiary, styles)}
-          </View>
-
-          <View style={[styles.card, { backgroundColor: colors.surfaceContainer, borderColor: colors.outlineVariant + '4D', alignItems: 'center' }]}>
-            <View style={[styles.positionIcon, { backgroundColor: colors.primaryContainer + '33' }]}>
-              <MaterialIcons name="work" size={24} color={colors.primary} />
-            </View>
-            <Text style={styles.positionLabel}>Position</Text>
-            <Text style={styles.positionValue}>{d.title}</Text>
           </View>
 
           <View style={[styles.card, { backgroundColor: colors.surfaceVariant, borderColor: colors.outlineVariant + '4D' }]}>
@@ -419,46 +369,40 @@ export default function JobDetailScreen({ job, onBack }) {
               ))}
             </View>
           </View>
+
+          <View style={[styles.applyCard, { backgroundColor: colors.error + '1A', borderColor: colors.error + '33' }]}>
+            <MaterialIcons name="event-busy" size={22} color={colors.error} />
+            <View>
+              <Text style={[styles.applyLabel, { color: colors.error }]}>{t('applyBefore')}</Text>
+              <Text style={styles.applyValue}>{formatDate(d.apply_before) || t('openUntilFilled')}</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.outlineVariant + '22' }]}>
+      <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: 'rgba(255,255,255,0.05)' }]}>
         <View style={styles.bottomBarInner}>
-          <TouchableOpacity
-            style={[styles.bookmarkBtn, { backgroundColor: colors.surfaceVariant, borderColor: colors.outlineVariant + '44' }]}
-            onPress={toggleSaved}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={[styles.bookmarkBtn, { backgroundColor: colors.surfaceVariant }]} onPress={toggleSaved}>
             <MaterialIcons
               name={saved ? 'bookmark' : 'bookmark-border'}
-              size={22}
+              size={24}
               color={saved ? colors.primary : colors.onSurfaceVariant}
             />
           </TouchableOpacity>
           {applied ? (
-            <View style={[styles.applyBtn, { backgroundColor: colors.secondaryContainer, borderColor: colors.secondary + '33' }]}>
-              <MaterialIcons name="check-circle" size={19} color={colors.secondary} />
+            <View style={[styles.applyBtn, { backgroundColor: colors.secondary + '22' }]}>
+              <MaterialIcons name="check-circle" size={20} color={colors.secondary} />
               <Text style={[styles.applyBtnText, { color: colors.secondary }]}>
-                {applied.status === 'accepted' ? t('accepted') : applied.status === 'rejected' ? t('rejected') : t('applied')}
+                Applied · {applied.status}
               </Text>
             </View>
           ) : (
             <TouchableOpacity
-              style={styles.applyBtnGradient}
+              style={[styles.applyBtn, { backgroundColor: colors.primaryContainer }]}
               activeOpacity={0.85}
               onPress={openApplyModal}
             >
-              <LinearGradient
-                colors={[colors.primary, colors.primary + 'CC']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.applyBtnGradInner}
-              >
-                <MaterialIcons name="send" size={18} color={colors.onPrimary} />
-                <Text style={[styles.applyBtnText, { color: colors.onPrimary }]}>
-                  {t('applyNow')}
-                </Text>
-              </LinearGradient>
+              <Text style={[styles.applyBtnText, { color: colors.onPrimaryContainer }]}>Apply the post</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -472,101 +416,67 @@ export default function JobDetailScreen({ job, onBack }) {
         onRequestClose={() => setShowApplyModal(false)}
       >
         <View style={styles.applyOverlay}>
-          <TouchableOpacity
-            style={styles.applyOverlayBackdrop}
-            activeOpacity={1}
-            onPress={() => setShowApplyModal(false)}
-          />
-          <Animated.View style={[styles.applySheet, { backgroundColor: colors.surfaceContainerLow, transform: [{ translateY: sheetTranslateY }] }]}>
-            {/* Drag handle + Header */}
-            <View {...sheetPanResponder.panHandlers}>
-              <View style={styles.sheetGrabber}>
-                <View style={[styles.grabberBar, { backgroundColor: colors.outlineVariant }]} />
-              </View>
-
-              <View style={[styles.sheetHeader, { borderBottomColor: colors.outlineVariant + '33' }]}>
-                <Text style={[styles.sheetTitle, { color: colors.onSurface }]}>{t('applyModalTitle')}</Text>
-                <TouchableOpacity onPress={() => setShowApplyModal(false)} style={styles.sheetCloseBtn}>
-                  <MaterialIcons name="close" size={22} color={colors.onSurfaceVariant} />
-                </TouchableOpacity>
-              </View>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setShowApplyModal(false)} />
+          <View style={[styles.applySheet, { backgroundColor: colors.surfaceContainerLow }]}>
+            <View style={styles.sheetGrabber}>
+              <View style={[styles.grabberBar, { backgroundColor: colors.outlineVariant }]} />
+            </View>
+            <View style={styles.sheetHeader}>
+              <MaterialIcons name="send" size={18} color={colors.primary} />
+              <Text style={[styles.sheetTitle, { color: colors.onSurface }]}>{t('applyModalTitle')}</Text>
             </View>
 
-            <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetScrollContent} keyboardShouldPersistTaps="handled">
-              {/* CV Card */}
-              <View style={[styles.cvCard, {
-                backgroundColor: userCvUrl ? colors.primaryContainer + '33' : colors.error + '11',
-                borderColor: userCvUrl ? colors.primary + '33' : colors.error + '33',
-              }]}>
-                <View style={[styles.cvCardIcon, { backgroundColor: userCvUrl ? colors.primary + '22' : colors.error + '22' }]}>
-                  <MaterialIcons name="description" size={20} color={userCvUrl ? colors.primary : colors.error} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.cvCardName, { color: colors.onSurface }]} numberOfLines={1}>
-                    {userCvUrl
-                      ? decodeURIComponent(userCvUrl.split('/').pop() || 'CV.pdf')
-                      : t('noCvWarning')}
-                  </Text>
-                  {userCvUrl && (
-                    <Text style={[styles.cvCardSub, { color: colors.onSurfaceVariant }]}>{t('yourCv')}</Text>
-                  )}
-                </View>
-                {userCvUrl ? (
-                  <MaterialIcons name="check-circle" size={20} color="#22c55e" />
-                ) : (
-                  <MaterialIcons name="warning" size={20} color={colors.error} />
-                )}
-              </View>
-
-              {/* Cover letter */}
-              <Text style={[styles.coverLabel, { color: colors.onSurfaceVariant }]}>{t('coverLetterHint')}</Text>
-              <TextInput
-                style={[styles.coverInput, {
-                  borderColor: colors.outlineVariant + '55',
-                  color: colors.onSurface,
-                  backgroundColor: colors.surfaceContainer,
-                }]}
-                placeholder={t('coverLetterHint')}
-                placeholderTextColor={colors.onSurfaceVariant}
-                value={coverText}
-                onChangeText={setCoverText}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
+            <View style={styles.cvRow}>
+              <MaterialIcons
+                name="description"
+                size={16}
+                color={userCvUrl ? colors.primary : colors.error}
               />
-            </ScrollView>
-
-            {/* Sticky send button */}
-            <View style={[styles.sheetFooter, { borderTopColor: colors.outlineVariant + '33' }]}>
-              <TouchableOpacity
+              <Text
                 style={[
-                  styles.sendBtnGradient,
-                  (!userCvUrl || applying) && { opacity: 0.45 },
+                  styles.cvRowText,
+                  { color: userCvUrl ? colors.onSurface : colors.error },
                 ]}
-                activeOpacity={0.85}
-                onPress={apply}
-                disabled={!userCvUrl || applying}
+                numberOfLines={1}
               >
-                <LinearGradient
-                  colors={userCvUrl ? [colors.primary, colors.primary + 'CC'] : [colors.outlineVariant, colors.outlineVariant]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.sendBtnGradInner}
-                >
-                  {applying ? (
-                    <ActivityIndicator size="small" color={colors.onPrimary} />
-                  ) : (
-                    <>
-                      <MaterialIcons name="send" size={16} color={colors.onPrimary} />
-                      <Text style={[styles.sendBtnText, { color: colors.onPrimary }]}>
-                        {t('sendApplication')}
-                      </Text>
-                    </>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
+                {userCvUrl
+                  ? `${t('yourCv')}: ${decodeURIComponent(userCvUrl.split('/').pop() || 'CV.pdf')}`
+                  : t('noCvWarning')}
+              </Text>
             </View>
-          </Animated.View>
+
+            <TextInput
+              style={[
+                styles.coverInput,
+                { borderColor: colors.outlineVariant + '66', color: colors.onSurface },
+              ]}
+              placeholder={t('coverLetterHint')}
+              placeholderTextColor={colors.onSurfaceVariant}
+              value={coverText}
+              onChangeText={setCoverText}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+
+            <TouchableOpacity
+              style={[styles.sendBtn, { backgroundColor: colors.primaryContainer }]}
+              activeOpacity={0.85}
+              onPress={apply}
+              disabled={applying}
+            >
+              {applying ? (
+                <ActivityIndicator size="small" color={colors.onPrimaryContainer} />
+              ) : (
+                <>
+                  <MaterialIcons name="check-circle" size={17} color={colors.onPrimaryContainer} />
+                  <Text style={[styles.sendBtnText, { color: colors.onPrimaryContainer }]}>
+                    {t('sendApplication')}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </View>
@@ -645,50 +555,16 @@ function getStyles(colors) {
     perkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     perkChip: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
     perkText: { fontFamily: FONTS.bodyMd, fontSize: 13, color: colors.onSurface },
-    applyBannerWrap: {
-      borderRadius: 16,
-      overflow: 'hidden',
-      elevation: 6,
-      shadowColor: colors.error,
-      shadowOpacity: 0.3,
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: 6 },
-    },
-    applyBanner: {
+    applyCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: 18,
-      gap: 14,
-    },
-    applyBannerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 14,
-      flex: 1,
-    },
-    applyBannerIconWrap: {
-      width: 48,
-      height: 48,
+      gap: 12,
+      padding: 14,
       borderRadius: 14,
-      backgroundColor: 'rgba(255,255,255,0.2)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      borderWidth: 1,
     },
-    applyBannerLabel: {
-      fontFamily: FONTS.labelMd,
-      fontSize: 11,
-      color: 'rgba(255,255,255,0.75)',
-      textTransform: 'uppercase',
-      letterSpacing: 1.2,
-      marginBottom: 3,
-    },
-    applyBannerValue: {
-      fontFamily: FONTS.headlineMd,
-      fontSize: 17,
-      fontWeight: '700',
-      color: '#fff',
-    },
+    applyLabel: { fontFamily: FONTS.labelMd, fontSize: 12, marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.8 },
+    applyValue: { fontFamily: FONTS.headlineMd, fontSize: 16, fontWeight: '700', color: colors.onSurface },
     bottomBar: {
       position: 'absolute', bottom: 0, left: 0, right: 0,
       borderTopWidth: 1,
@@ -703,24 +579,8 @@ function getStyles(colors) {
     bookmarkBtn: {
       width: 52, height: 52, borderRadius: 16,
       justifyContent: 'center', alignItems: 'center',
-      borderWidth: 1,
     },
     applyBtn: {
-      flex: 1, height: 52, borderRadius: 16,
-      flexDirection: 'row', gap: 8,
-      justifyContent: 'center', alignItems: 'center',
-      borderWidth: 1,
-    },
-    applyBtnGradient: {
-      flex: 1, height: 52, borderRadius: 16,
-      overflow: 'hidden',
-      elevation: 4,
-      shadowColor: colors.primary,
-      shadowOpacity: 0.35,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 4 },
-    },
-    applyBtnGradInner: {
       flex: 1, height: 52, borderRadius: 16,
       flexDirection: 'row', gap: 8,
       justifyContent: 'center', alignItems: 'center',
@@ -773,70 +633,40 @@ function getStyles(colors) {
       paddingVertical: 6,
     },
     applyOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.50)',
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.55)',
       justifyContent: 'flex-end',
-    },
-    applyOverlayBackdrop: {
-      flex: 1,
+      zIndex: 999,
     },
     applySheet: {
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      maxHeight: '75%',
+      borderTopLeftRadius: 22,
+      borderTopRightRadius: 22,
+      paddingHorizontal: 20,
+      paddingBottom: 34,
+      paddingTop: 8,
     },
-    sheetGrabber: { alignItems: 'center', paddingBottom: 8 },
-    grabberBar: { width: 36, height: 4, borderRadius: 2 },
-    sheetHeader: {
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-      paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1,
-    },
-    sheetTitle: { fontFamily: FONTS.headlineMd, fontSize: 19, fontWeight: '700' },
-    sheetCloseBtn: { padding: 4 },
-    sheetScroll: { flex: 1 },
-    sheetScrollContent: { padding: 20, gap: 16 },
-    cvCard: {
-      flexDirection: 'row', alignItems: 'center', gap: 12,
-      padding: 14, borderRadius: 14, borderWidth: 1,
-    },
-    cvCardIcon: {
-      width: 40, height: 40, borderRadius: 12,
-      justifyContent: 'center', alignItems: 'center',
-    },
-    cvCardName: { fontFamily: FONTS.bodyMd, fontSize: 14, fontWeight: '600' },
-    cvCardSub: { fontFamily: FONTS.labelMd, fontSize: 11, marginTop: 2 },
-    coverLabel: { fontFamily: FONTS.labelMd, fontSize: 12, marginBottom: -8 },
+    sheetGrabber: { alignItems: 'center', paddingBottom: 10 },
+    grabberBar: { width: 40, height: 4, borderRadius: 2 },
+    sheetHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+    sheetTitle: { fontFamily: FONTS.headlineMd, fontSize: 17 },
+    cvRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
+    cvRowText: { fontFamily: FONTS.labelMd, fontSize: 13, flexShrink: 1 },
     coverInput: {
       fontFamily: FONTS.bodyMd,
       fontSize: 14,
       borderWidth: 1,
       borderRadius: 12,
       padding: 12,
-      minHeight: 76,
+      minHeight: 100,
+      marginBottom: 14,
     },
-    sheetFooter: {
-      paddingHorizontal: 20,
-      paddingTop: 14,
-      paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-      borderTopWidth: 1,
-    },
-    sendBtnGradient: {
-      height: 50,
-      borderRadius: 16,
-      overflow: 'hidden',
-      elevation: 4,
-      shadowColor: colors.primary,
-      shadowOpacity: 0.35,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 4 },
-    },
-    sendBtnGradInner: {
-      flex: 1,
+    sendBtn: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
-      borderRadius: 16,
+      gap: 7,
+      height: 48,
+      borderRadius: 24,
     },
     sendBtnText: { fontFamily: FONTS.headlineMd, fontSize: 15, fontWeight: '700' },
   });
