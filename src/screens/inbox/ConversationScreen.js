@@ -91,6 +91,7 @@ export default function ConversationScreen({ conversationId, onBack, restricted,
   }, [recording]);
 
   const fetchMessages = useCallback(async (beforeCreatedAt) => {
+    if (!conversationId) return [];
     try {
       let query = supabase
         .from('messages')
@@ -142,47 +143,52 @@ export default function ConversationScreen({ conversationId, onBack, restricted,
 
   useEffect(() => {
     const boot = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setMyId(user.id);
-      const { data: others } = await supabase
-        .from('conversation_participants')
-        .select('user_id')
-        .eq('conversation_id', conversationId)
-        .neq('user_id', user.id);
-      const otherId = others && others.length ? others[0].user_id : null;
-      if (!otherId) return;
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('full_name, username, avatar_url, is_online, last_seen')
-        .eq('id', otherId)
-        .single();
-      if (prof) setOther({ id: otherId, ...prof });
-      const { data: mine } = await supabase
-        .from('conversation_participants')
-        .select('last_read_at, muted_until')
-        .eq('conversation_id', conversationId)
-        .eq('user_id', user.id)
-        .single();
-      if (mine?.last_read_at) {
-        const { data: otherCp } = await supabase
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        setMyId(user.id);
+        const { data: others } = await supabase
           .from('conversation_participants')
-          .select('last_read_at')
+          .select('user_id')
           .eq('conversation_id', conversationId)
-          .eq('user_id', otherId)
+          .neq('user_id', user.id);
+        const otherId = others && others.length ? others[0].user_id : null;
+        if (!otherId) return;
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name, username, avatar_url, is_online, last_seen')
+          .eq('id', otherId)
           .single();
-        if (otherCp?.last_read_at) setOtherReadAt(otherCp.last_read_at);
+        if (prof) setOther({ id: otherId, ...prof });
+        const { data: mine } = await supabase
+          .from('conversation_participants')
+          .select('last_read_at, muted_until')
+          .eq('conversation_id', conversationId)
+          .eq('user_id', user.id)
+          .single();
+        if (mine?.last_read_at) {
+          const { data: otherCp } = await supabase
+            .from('conversation_participants')
+            .select('last_read_at')
+            .eq('conversation_id', conversationId)
+            .eq('user_id', otherId)
+            .single();
+          if (otherCp?.last_read_at) setOtherReadAt(otherCp.last_read_at);
+        }
+        await supabase
+          .from('conversation_participants')
+          .update({ last_read_at: new Date().toISOString() })
+          .eq('conversation_id', conversationId)
+          .eq('user_id', user.id);
+      } catch (err) {
+        console.error('boot error:', err);
       }
-      await supabase
-        .from('conversation_participants')
-        .update({ last_read_at: new Date().toISOString() })
-        .eq('conversation_id', conversationId)
-        .eq('user_id', user.id);
     };
-    boot();
+    if (conversationId) boot();
   }, [conversationId]);
 
   useEffect(() => {
+    if (!conversationId) return;
     const channel = supabase
       .channel(`conversation-${conversationId}`)
       .on('postgres_changes', {
