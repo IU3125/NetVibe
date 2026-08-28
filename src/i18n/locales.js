@@ -17,6 +17,7 @@ const locales = {
     google: 'Google',
     apple: 'Apple',
     successTitle: 'Account Created!',
+    errorTitle: 'Error',
     successSubtitle: 'Welcome to NetVibe',
     successDesc: 'Your account has been created successfully. Start exploring now!',
 
@@ -282,6 +283,7 @@ const locales = {
     google: 'Google',
     apple: 'Apple',
     successTitle: 'Hesap Oluşturuldu!',
+    errorTitle: 'Hata',
     successSubtitle: "NetVibe'e Hoş Geldiniz",
     successDesc: 'Hesabınız başarıyla oluşturuldu. Hemen keşfetmeye başlayın!',
 
@@ -533,6 +535,7 @@ const locales = {
     google: 'Google',
     apple: 'Apple',
     successTitle: 'Hesab Yaradıldı!',
+    errorTitle: 'Xəta',
     successSubtitle: 'NetVibe-ə Xoş Gəldiniz',
     successDesc: 'Hesabınız uğurla yaradıldı. İndi kəşf etməyə başlayın!',
 
@@ -785,6 +788,7 @@ const locales = {
     google: 'Google',
     apple: 'Apple',
     successTitle: 'Аккаунт создан!',
+    errorTitle: 'Ошибка',
     successSubtitle: 'Добро пожаловать в NetVibe',
     successDesc: 'Ваш аккаунт успешно создан. Начните исследовать!',
 
@@ -1037,6 +1041,7 @@ const locales = {
     google: 'Google',
     apple: 'Apple',
     successTitle: 'Konto erstellt!',
+    errorTitle: 'Fehler',
     successSubtitle: 'Willkommen bei NetVibe',
     successDesc: 'Dein Konto wurde erfolgreich erstellt. Starte jetzt mit der Erkundung!',
 
@@ -1289,6 +1294,7 @@ const locales = {
     google: 'Google',
     apple: 'Apple',
     successTitle: 'Compte créé!',
+    errorTitle: 'Erreur',
     successSubtitle: 'Bienvenue sur NetVibe',
     successDesc: 'Votre compte a été créé avec succès. Commencez à explorer!',
 

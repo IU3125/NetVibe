@@ -18,7 +18,7 @@ import { trackLogin } from '../../lib/trackLogin';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
-function SuccessModal({ visible, message, onDismiss, t, styles }) {
+function SuccessModal({ visible, type = 'success', message, onDismiss, t, styles }) {
   const scale = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -36,6 +36,8 @@ function SuccessModal({ visible, message, onDismiss, t, styles }) {
 
   if (!visible) return null;
 
+  const isError = type === 'error';
+
   return (
     <View style={styles.modalOverlay}>
       <Animated.View
@@ -44,13 +46,13 @@ function SuccessModal({ visible, message, onDismiss, t, styles }) {
           { transform: [{ scale }], opacity },
         ]}
       >
-        <View style={styles.modalIconCircle}>
-          <MaterialIcons name="check" size={32} color="#FFFFFF" />
+        <View style={[styles.modalIconCircle, isError && { backgroundColor: '#d32f2f' }]}>
+          <MaterialIcons name={isError ? 'close' : 'check'} size={32} color="#FFFFFF" />
         </View>
-        <Text style={styles.modalTitle}>{t('successTitle')}</Text>
+        <Text style={styles.modalTitle}>{isError ? t('errorTitle') : t('successTitle')}</Text>
         <Text style={styles.modalMessage}>{message}</Text>
         <TouchableOpacity
-          style={styles.modalButton}
+          style={[styles.modalButton, isError && { backgroundColor: '#d32f2f' }]}
           activeOpacity={0.85}
           onPress={onDismiss}
         >
@@ -73,7 +75,7 @@ export default function AuthScreen({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [successModal, setSuccessModal] = useState({ visible: false, message: '' });
+  const [successModal, setSuccessModal] = useState({ visible: false, type: 'success', message: '' });
   const [forgotMode, setForgotMode] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
 
@@ -104,10 +106,10 @@ export default function AuthScreen({ onLogin }) {
           options: { data: { full_name: fullName } },
         });
         if (error) throw error;
-        setSuccessModal({ visible: true, message: 'Check your email for confirmation!' });
+        setSuccessModal({ visible: true, type: 'success', message: 'Check your email for confirmation!' });
       }
     } catch (err) {
-      setSuccessModal({ visible: true, message: err.message });
+      setSuccessModal({ visible: true, type: 'error', message: err.message });
     } finally {
       setLoading(false);
     }
@@ -118,23 +120,23 @@ export default function AuthScreen({ onLogin }) {
       const { error } = await supabase.auth.signInWithOAuth({ provider });
       if (error) throw error;
     } catch (err) {
-      setSuccessModal({ visible: true, message: err.message });
+      setSuccessModal({ visible: true, type: 'error', message: err.message });
     }
   };
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      setSuccessModal({ visible: true, message: t('enterEmailFirst') });
+      setSuccessModal({ visible: true, type: 'error', message: t('enterEmailFirst') });
       return;
     }
     setSendingReset(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
       if (error) throw error;
-      setSuccessModal({ visible: true, message: t('resetLinkSent') });
+      setSuccessModal({ visible: true, type: 'success', message: t('resetLinkSent') });
       setForgotMode(false);
     } catch (err) {
-      setSuccessModal({ visible: true, message: err.message });
+      setSuccessModal({ visible: true, type: 'error', message: err.message });
     } finally {
       setSendingReset(false);
     }
@@ -354,8 +356,9 @@ export default function AuthScreen({ onLogin }) {
 
       <SuccessModal
         visible={successModal.visible}
+        type={successModal.type}
         message={successModal.message}
-        onDismiss={() => setSuccessModal({ visible: false, message: '' })}
+        onDismiss={() => setSuccessModal({ visible: false, type: 'success', message: '' })}
         t={t}
         styles={styles}
       />
